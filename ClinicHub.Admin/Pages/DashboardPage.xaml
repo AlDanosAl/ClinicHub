@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ClinicHub.Admin.Pages.DashboardPage"
+             Title="Дашборд">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="?" Clicked="OnHelpClicked" />
+    </ContentPage.ToolbarItems>
+
+    <Grid RowDefinitions="Auto,*,Auto" Padding="16">
+
+        <VerticalStackLayout x:Name="SummaryLayout" Grid.Row="0" Spacing="8" Margin="0,0,0,16">
+            <Label x:Name="RequestsTodayLabel" FontSize="20" />
+            <Label x:Name="RequestsWaitingLabel" />
+            <Label x:Name="SentTodayLabel" />
+            <Label x:Name="FailedTodayLabel" />
+            <Label x:Name="QueueLabel" />
+            <Label x:Name="PhonesLabel" />
+        </VerticalStackLayout>
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Spacing="16">
+
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Телефоны — статус подключения" FontAttributes="Bold" />
+                    <CollectionView x:Name="PhonesStatusList">
+                        <CollectionView.EmptyView>
+                            <Label Text="Телефонов нет" TextColor="Gray" />
+                        </CollectionView.EmptyView>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Padding="4,6" ColumnDefinitions="*,Auto">
+                                    <Label Text="{Binding PhoneNumber}" FontAttributes="Bold" />
+                                    <VerticalStackLayout Grid.Column="1" HorizontalOptions="End" Spacing="2">
+                                        <!-- Текст (не только цвет) — статус должен читаться независимо от восприятия цвета. -->
+                                        <Label Text="{Binding StatusText}" FontAttributes="Bold" FontSize="13"
+                                               TextColor="{Binding StatusColor}" HorizontalOptions="End" />
+                                        <Label Text="{Binding LastSeenText}" FontSize="11" TextColor="Gray" HorizontalOptions="End" />
+                                    </VerticalStackLayout>
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Остатки SMS на SIM-картах" FontAttributes="Bold" />
+                    <CollectionView x:Name="SimList">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Padding="4,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <VerticalStackLayout Spacing="2">
+                                        <Label Text="{Binding Number}" FontAttributes="Bold" />
+                                        <Label Text="{Binding Operator}" FontSize="12" TextColor="Gray" />
+                                    </VerticalStackLayout>
+                                    <VerticalStackLayout Grid.Column="1" HorizontalOptions="End">
+                                        <Label Text="{Binding Balance, StringFormat='{0} SMS'}" FontAttributes="Bold" HorizontalOptions="End" />
+                                        <Label Text="{Binding TodaySegments, StringFormat='сегодня: {0}'}" FontSize="12" TextColor="Gray" />
+                                    </VerticalStackLayout>
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <Button Grid.Row="2" Text="Обновить" Clicked="OnRefreshClicked" Margin="0,12,0,0" />
+    </Grid>
+</ContentPage>

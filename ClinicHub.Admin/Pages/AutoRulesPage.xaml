@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ClinicHub.Admin.Pages.AutoRulesPage"
+             Title="Авто-рассылки">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="?" Clicked="OnHelpClicked" />
+    </ContentPage.ToolbarItems>
+
+    <Grid RowDefinitions="Auto,*,Auto" Padding="0">
+        <Label Grid.Row="0" Margin="16,12,16,0" FontSize="12" TextColor="Gray"
+               Text="Персональные сообщения по событию (например, день рождения + поздравление/скидка). Срабатывают автоматически, один раз в год на пациента." />
+
+        <CollectionView Grid.Row="1" x:Name="RulesView" SelectionMode="Single" SelectionChanged="OnRuleSelected">
+            <CollectionView.EmptyView>
+                <Label Text="Правил ещё нет" HorizontalOptions="Center" Margin="0,40,0,0" TextColor="Gray" />
+            </CollectionView.EmptyView>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Grid Padding="16,10" ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <VerticalStackLayout Spacing="2">
+                            <Label Text="{Binding Name}" FontAttributes="Bold" />
+                            <Label Text="{Binding TextTemplate}" FontSize="12" TextColor="Gray" LineBreakMode="TailTruncation" />
+                        </VerticalStackLayout>
+                        <Label Grid.Column="1" Text="{Binding IsActive}" FontSize="12" FontAttributes="Bold" VerticalOptions="Center" />
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <Button Grid.Row="2" Text="Добавить правило" Clicked="OnAddRuleClicked" Margin="16,8" />
+    </Grid>
+</ContentPage>

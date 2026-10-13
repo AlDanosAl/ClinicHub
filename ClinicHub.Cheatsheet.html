@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>ClinicHub — Шпаргалка и Техническое задание</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Calibri, Arial, sans-serif; margin: 0; padding: 32px 40px; color: #1f2937; }
+  h1 { font-size: 26px; margin: 0 0 4px; color: #111827; }
+  h2 { font-size: 16px; text-transform: uppercase; letter-spacing: 1px; color: #6b7280; margin: 28px 0 12px; border-bottom: 2px solid #e5e7eb; padding-bottom: 6px; }
+  h3 { margin: 18px 0 8px; font-size: 15px; color: #111827; }
+  .sub { color: #6b7280; font-size: 13px; margin-bottom: 20px; }
+  .card { border: 1px solid #e5e7eb; border-left: 5px solid #6b7280; border-radius: 8px; padding: 14px 18px; margin-bottom: 14px; page-break-inside: avoid; }
+  .card.core   { border-left-color: #d97706; }
+  .card.api    { border-left-color: #2563eb; }
+  .card.admin  { border-left-color: #059669; }
+  .card.sms    { border-left-color: #dc2626; }
+  .card.title  { margin-bottom: 18px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; margin-top: 6px; }
+  th, td { border: 1px solid #e5e7eb; padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: #f3f4f6; font-weight: 600; white-space: nowrap; }
+  code { background: #f3f4f6; border-radius: 4px; padding: 1px 6px; font-family: Consolas, monospace; font-size: 12px; color: #b91c1c; }
+  pre { background: #111827; color: #e5e7eb; border-radius: 6px; padding: 10px 14px; font-size: 12px; overflow-x: auto; line-height: 1.5; }
+  pre code { background: none; color: #e5e7eb; padding: 0; }
+  .badge { display: inline-block; background: #111827; color: #fff; border-radius: 20px; padding: 2px 12px; font-size: 11px; font-weight: 600; margin-left: 8px; vertical-align: middle; }
+  .ok { color: #059669; font-weight: 600; }
+  .warn { color: #d97706; font-weight: 600; }
+  .bad { color: #dc2626; font-weight: 600; }
+  ul, ol { margin: 6px 0; padding-left: 22px; }
+  li { margin-bottom: 4px; font-size: 13px; }
+  p { font-size: 13px; }
+  .small { font-size: 12px; color: #6b7280; }
+  .footer { margin-top: 24px; padding-top: 10px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #9ca3af; text-align: center; }
+  .toc { border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 18px; margin-bottom: 18px; }
+  .toc a { color: #2563eb; text-decoration: none; font-size: 13px; }
+  .req-id { font-family: Consolas, monospace; font-size: 11px; color: #6b7280; }
+</style>
+</head>
+<body>
+
+<h1>ClinicHub — Шпаргалка и Техническое задание (ТЗ)</h1>
+<div class="sub">Документ из двух частей: (1) памятка по подпроектам, (2) техническое задание на систему рассылки SMS.</div>
+
+<!-- ============================================================ -->
+<!-- ЧАСТЬ 1. ШПАРГАЛКА                                              -->
+<!-- ============================================================ -->
+<h2>Часть 1. Памятка по подпроектам</h2>
+
+<div class="card core">
+  <h3>ClinicHub.Core <span class="badge">общая библиотека</span></h3>
+  <table>
+    <tr><th>Роль</th><td>Общие модели и интерфейсы, подключается всеми проектами</td></tr>
+    <tr><th>Класть сюда</th><td><code>SmsRequest</code>, <code>Patient</code>, <code>User</code>, DTO, интерфейсы сервисов</td></tr>
+  </table>
+</div>
+
+<div class="card api">
+  <h3>ClinicHub.Api <span class="badge">backend</span></h3>
+  <table>
+    <tr><th>Роль</th><td>ASP.NET Core Minimal API. Хранит заявки, планирует рассылку, управляет очередями и остатками</td></tr>
+    <tr><th>Адреса</th><td><code>https://localhost:7180</code> / <code>http://localhost:5112</code></td></tr>
+    <tr><th>Документация</th><td><code>https://localhost:7180/openapi/v1.json</code> <span class="warn">(именно /v1.json)</span></td></tr>
+  </table>
+</div>
+
+<div class="card admin">
+  <h3>ClinicHub.Admin <span class="badge">Windows (ПК)</span></h3>
+  <table>
+    <tr><th>Роль</th><td>Интерфейс администратора: создание/одобрение заявок, ввод остатков, управление телефонами</td></tr>
+    <tr><th>Запуск</th><td>В списке над ▶ выбери <b>Windows Machine</b> → F5</td></tr>
+  </table>
+</div>
+
+<div class="card sms">
+  <h3>ClinicHub.SmsAgent <span class="badge">Android</span></h3>
+  <table>
+    <tr><th>Роль</th><td>Работает на дежурных телефонах: мониторит очередь и отправляет SMS, работает в фоне</td></tr>
+    <tr><th>Запуск</th><td>Android Device Manager → создать/запустить эмулятор → выбрать его → F5</td></tr>
+    <tr><th>Замечание</th><td>Ошибка «System UI isn't responding» → нажми «Wait», эмулятор просто медленный</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h3>Запуск всех проектов вместе</h3>
+  <ul>
+    <li>ПКМ по решению → «Configure Startup Projects…» → «Multiple startup projects»</li>
+    <li>Для <code>ClinicHub.Api</code> и <code>ClinicHub.Admin</code> — действие «Start» → OK → F5</li>
+    <li><code>ClinicHub.SmsAgent</code> запускается отдельно на телефоне/эмуляторе и подключается к работающему API</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h3>Хранение секретов (без попадания в git)</h3>
+  <table>
+    <tr><th>Способ</th><th>Команда / пример</th></tr>
+    <tr><td><b>User Secrets</b> <span class="ok">✔ рекомендую</span></td><td><code>dotnet user-secrets init --project ClinicHub.Api</code>, затем <code>dotnet user-secrets set "ApiKey" "значение" --project ClinicHub.Api</code></td></tr>
+    <tr><td><b>appsettings.Development.json</b> + .gitignore</td><td><code>"ApiUrl": "https://localhost:7180"</code> — файл нет в git</td></tr>
+    <tr><td><b>Переменные окружения</b></td><td><code>$env:CLINICHUB_API_KEY = "значение"</code> или в <code>launchSettings.json</code></td></tr>
+    <tr><td><b>.env</b> + .gitignore</td><td><code>API_KEY=значение</code>, <code>.env</code> в <code>.gitignore</code></td></tr>
+  </table>
+</div>
+
+<div class="card warn-border" style="border-left-color:#d97706; background:#fffbeb;">
+  <h3>ВАЖНО: текущий код — тестовый</h3>
+  <p><b>Весь существующий код в проектах — это автоматически сгенерированные шаблоны (Visual Studio), а не рабочая логика.</b> Он нужен только для одного: <b>проверить, что проект собран правильно</b> и приложение запускается на каждой платформе.</p>
+  <ul>
+    <li><b>ClinicHub.Api</b> — шаблонный эндпоинт <code>/weatherforecast</code> (случайные температуры) — тестовые данные, удалить при написании ТЗ-функций;</li>
+    <li><b>ClinicHub.Admin</b> и <b>ClinicHub.SmsAgent</b> — одинаковый «Hello World» со счётчиком кликов — тестовая страница MAUI;</li>
+    <li><b>ClinicHub.Core</b> — пустой <code>Class1.cs</code>.</li>
+  </ul>
+  <p class="small"><b>Если «Hello World» открывается и на ПК (Windows Machine) и на эмуляторе Android — значит каркас собран верно, и можно удалять шаблоны и писать реальную логику по ТЗ.</b> Выдуманные данные («погода», счётчик, <code>Class1</code>) в прод не попадут.</p>
+</div>
+
+<h2>Часть 1. А. Текущая структура проекта</h2>
+<div class="card">
+  <p class="small">Файлы, которые сейчас есть в решении (на момент составления документа; папки <code>bin/</code>, <code>obj/</code>, <code>.vs/</code> опущены — это временные артефакты сборки).</p>
+  <pre><code>ClinicHub.slnx                  ← файл решения (4 проекта)
+
+ClinicHub.Core/                 ← общая библиотека
+├── Class1.cs                   ← ПУСТОЙ шаблон (удалить)
+└── ClinicHub.Core.csproj
+
+ClinicHub.Api/                  ← backend (ASP.NET Core Minimal API)
+├── Program.cs                  ← точка входа, эндпоинт /weatherforecast (тест)
+├── appsettings.json            ← настройки (логирование)
+├── appsettings.Development.json← настройки для разработки
+├── ClinicHub.Api.http          ← пример запроса REST
+└── Properties/launchSettings.json  ← профили запуска (http:5112, https:7180)
+
+ClinicHub.Admin/                ← приложение администратора (MAUI, ПК)
+├── MauiProgram.cs              ← точка входа MAUI
+├── App.xaml / App.xaml.cs      ← корневой класс приложения
+├── AppShell.xaml / .cs         ← навигация (Shell)
+├── MainPage.xaml / .cs         ← «Hello World» (тест)
+├── Platforms/
+│   ├── Android/                ← код Android-платформы
+│   ├── iOS/, MacCatalyst/      ← код iOS-платформы
+│   └── Windows/                ← код Windows-платформы (App.xaml.cs)
+└── Resources/                  ← иконки, шрифты, изображения, стили
+
+ClinicHub.SmsAgent/             ← приложение рассыльщик (MAUI, Android)
+├── MauiProgram.cs, App.xaml, AppShell.xaml, MainPage.xaml  ← то же «Hello World» (тест)
+├── Platforms/Android/          ← Android-платформа (сюда позже: разрешения SMS)
+└── Resources/                  ← ресурсы</code></pre>
+  <p class="small">Обе MAUI-программы (Admin, SmsAgent) пока <b>идентичны</b> — это один и тот же шаблон. В дальнейшем они будут различаться: Admin — формой заявок и отчётами, SmsAgent — фоновым сервисом отправки.</p>
+</div>
+
+<h2>Часть 1. Б. Зависимости и версии — как воспроизвести сборку</h2>
+<div class="card">
+  <p class="small">Проверено на машине разработчика 11.09.2026 (<code>dotnet --version</code>, <code>dotnet workload list</code>, содержимое csproj).</p>
+
+  <h3>Б.1 ОС и инструменты</h3>
+  <table>
+    <tr><th>Компонент</th><th>Версия</th><th>Примечание</th></tr>
+    <tr><td><b>ОС</b></td><td>Windows (10/11, 64-бит)</td><td>Для сборки Windows/Android проектов. iOS/MacCatalyst собираются только на macOS</td></tr>
+    <tr><td><b>Visual Studio</b></td><td><b>2026</b> (VS 18.10, build 18.10.12201.205)</td><td>Маст be с workload'ами .NET MAUI + ASP.NET</td></tr>
+    <tr><td><b>Java JDK</b></td><td><b>21.0.8</b> (Android Studio OpenJDK)</td><td>Путь: <code>C:\Program Files\Android\openjdk\jdk-21.0.8</code> — требуется для сборки Android</td></tr>
+    <tr><td><b>Android Studio</b></td><td>установлена</td><td>Поставляет JDK и инструменты; для эмулятора необязательна, можно через VS</td></tr>
+  </table>
+
+  <h3>Б.2 .NET SDK</h3>
+  <table>
+    <tr><th>Параметр</th><th>Значение</th></tr>
+    <tr><td><b>SDK (основной)</b></td><td><code>.NET SDK 10.0.401</code></td></tr>
+    <tr><td>Дополнительно установлен</td><td><code>6.0.428</code> (не обязателен, остался от других проектов)</td></tr>
+    <tr><td>Команда проверки</td><td><code>dotnet --list-sdks</code></td></tr>
+  </table>
+
+  <h3>Б.3 Workload'ы .NET MAUI (dotnet workload list)</h3>
+  <table>
+    <tr><th>Workload</th><th>Версия манифеста</th><th>Источник</th></tr>
+    <tr><td><b>android</b></td><td>36.1.69/10.0.100</td><td>VS 18.10.12201.205</td></tr>
+    <tr><td><b>ios</b></td><td>26.5.10301/10.0.100</td><td>VS 18.10.12201.205</td></tr>
+    <tr><td><b>maccatalyst</b></td><td>26.5.10301/10.0.100</td><td>VS 18.10.12201.205</td></tr>
+    <tr><td><b>maui-windows</b></td><td>10.0.20/10.0.100</td><td>VS 18.10.12201.205</td></tr>
+  </table>
+  <p class="small">Версия пакетов манифеста workload: <code>10.0.400-manifests.b0700452</code>. Проверка/установка: <code>dotnet workload list</code> / <code>dotnet workload install maui-android maui-windows</code>. Установка через Visual Studio Installer → компонент «.NET MAUI» предпочтительнее.</p>
+
+  <h3>Б.4 Android-инструменты</h3>
+  <table>
+    <tr><th>Компонент</th><th>Версия</th><th>Путь</th></tr>
+    <tr><td><b>Android SDK</b></td><td>API, доступные через VS; проект требует <code>android</code> net10</td><td><code>%LOCALAPPDATA%\Android\Sdk</code> (у тебя: <code>C:\Users\xcx7276\AppData\Local\Android\Sdk</code>)</td></tr>
+    <tr><td><b>adb</b></td><td>из Android SDK platform-tools</td><td><code>&nbsp;\platform-tools\adb.exe</code></td></tr>
+    <tr><td><b>Эмулятор</b></td><td>создаётся в Android Device Manager (VS)</td><td>AVD в <code>%USERPROFILE%\.android\avd</code></td></tr>
+  </table>
+  <p class="small">Проверка устройств: <code>& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" devices</code> — если список пуст, эмулятор/телефон не подключён.</p>
+
+  <h3>Б.5 Целевые платформы (TargetFramework) и версии в csproj</h3>
+  <table>
+    <tr><th>Проект</th><th>TFM (TargetFramework(s))</th><th>Пакеты NuGet</th></tr>
+    <tr><td><b>ClinicHub.Core</b></td><td><code>net10.0</code></td><td>—</td></tr>
+    <tr><td><b>ClinicHub.Api</b></td><td><code>net10.0</code></td><td><code>Microsoft.AspNetCore.OpenApi 10.0.12</code></td></tr>
+    <tr><td><b>ClinicHub.Admin</b></td><td><code>net10.0-android</code>; + <code>net10.0-ios</code>, <code>net10.0-maccatalyst</code> (не на Linux); + <code>net10.0-windows10.0.19041.0</code> (на Windows)</td><td><code>Microsoft.Maui.Controls</code> версии <code>$(MauiVersion)</code> (MauiVersion задаёт MAUI-workload); <code>Microsoft.Extensions.Logging.Debug 10.0.0</code></td></tr>
+    <tr><td><b>ClinicHub.SmsAgent</b></td><td>аналогично Admin</td><td>аналогично Admin</td></tr>
+  </table>
+  <p class="small">Прочее в csproj Admin/SmsAgent: <code>UseMaui=true</code>, <code>MauiXamlInflator=SourceGen</code>, <code>WindowsPackageType=None</code>, ApplicationId <code>com.companyname.clinichub.admin</code> / <code>…smsagent</code>, мин. версии ОС: Android 21, iOS 15, Windows 10.0.17763.</p>
+
+  <h3>Б.6 Профили запуска и порты (launchSettings.json)</h3>
+  <table>
+    <tr><th>Проект</th><th>Профиль</th><th>URL</th><th>Environment</th></tr>
+    <tr><td>CLinicHub.Api</td><td><code>http</code></td><td><code>http://localhost:5112</code></td><td>Development</td></tr>
+    <tr><td>ClinicHub.Api</td><td><code>https</code></td><td><code>https://localhost:7180;http://localhost:5112</code></td><td>Development</td></tr>
+    <tr><td>Admin / SmsAgent</td><td>MAUI</td><td>—</td><td>выбор платформы в панели ▶</td></tr>
+  </table>
+
+  <h3>Б.7 Быстрая проверка «собралось ли» (консоль)</h3>
+  <pre><code>dotnet restore ClinicHub.slnx
+dotnet build ClinicHub.slnx -c Debug        # сборка всех 4 проектов
+dotnet build ClinicHub.Api/ClinicHub.Api.csproj   # только API (быстрый тест)</code></pre>
+  <p class="small">Полная сборка Android из консоли (пример): <code>dotnet build ClinicHub.Admin -f net10.0-android -c Debug</code>.</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- ЧАСТЬ 2. ТЕХНИЧЕСКОЕ ЗАДАНИЕ                                   -->
+<!-- ============================================================ -->
+<h2>Часть 2. Техническое задание<br>«Автоматизированная система рассылки SMS-уведомлений клиники»</h2>
+
+<div class="toc">
+  <b>Содержание ТЗ:</b><br>
+  1. Назначение и цели системы<br>
+  2. Архитектура и участники<br>
+  3. Функциональные требования (по блокам)<br>
+  4. Подсистема планирования и «защита от блокировки» SIM<br>
+  5. Подсистема остатков и расчёта стоимости SMS<br>
+  6. Фоновая работа SmsAgent на Android<br>
+  7. Сущности базы данных (MS SQL)<br>
+  8. Состав API (ручки и методы)<br>
+  9. Интеграция с сайтом клиники<br>
+  10. Нефункциональные требования
+</div>
+
+<h3>1. Назначение и цели</h3>
+<div class="card">
+  <p>Система обеспечивает <b>приём заявок на отправку SMS</b> (как персональных — запись на приём, так и массовых — рассылка многим пациентам) и их <b>автоматическую, безопасную отправку</b> через дежурные телефоны с сим-картами, с учётом лимитов операторов и остатков SMS на каждой сим-карте.</p>
+  <p>Основные цели:</p>
+  <ul>
+    <li>исключить <b>ручной ввод SMS по одному</b> — всё от пользователя идёт через одну форму;</li>
+    <li>не допустить <b>блокировки сим-карт</b> операторами из-за резких массовых отправок — сервер сам распределяет отправку по интервалам;</li>
+    <li>вести учёт <b>остатков SMS по каждой SIM</b> и не допускать отправки «в минус»;</li>
+    <li>отправлять SMS, когда телефон <b>заблокирован/в фоне</b>.</li>
+  </ul>
+</div>
+
+<h3>2. Архитектура и участники</h3>
+<div class="card">
+  <table>
+    <tr><th>Участник</th><th>Платформа</th><th>Роль в системе</th></tr>
+    <tr><td><b>ClinicHub.Admin</b></td><td>Windows</td><td>Интерфейс администратора: создание заявок всех типов, одобрение, кнопка «Отправить сейчас», управление телефонами и сим-картами, ввод остатков</td></tr>
+    <tr><td><b>ClinicHub.Api</b></td><td>Сервер</td><td>Центральный хаб: приём заявок, планирование, распределение по телефонам, учёт остатков, журнал отправок, точки интеграции для сайта клиники</td></tr>
+    <tr><td><b>ClinicHub.SmsAgent</b></td><td>Android</td><td>Дежурное приложение на 4+ телефонах: постоянно «слушает» сервер, забирает задачи и физически отправляет SMS; работает в фоне на заблокированном телефоне</td></tr>
+    <tr><td><b>ClinicHub.Core</b></td><td>—</td><td>Общие модели и DTO, используемые всеми участниками</td></tr>
+    <tr><td><b>База данных</b></td><td>MS SQL Server</td><td>Хранение заявок, очередей, телефонов, сим-карт, остатков, журналов</td></tr>
+  </table>
+  <p class="small">Число дежурных телефонов <b>настраиваемо</b> (по умолчанию 4, может быть больше или меньше).</p>
+</div>
+
+<h3>3. Функциональные требования</h3>
+
+<div class="card">
+  <h3>3.1 Типы заявок (Request)</h3>
+  <table>
+    <tr><th>Тип</th><th>Описание</th><th>Пример</th></tr>
+    <tr><td><b>Персональная</b></td><td>SMS одному конкретному пациенту/клиенту, подтверждение записи. Одна заявка → одно SMS (может быть из нескольких сегментов)</td><td>«Уважаемый Иван, ваша запись к терапевту 12.09 в 14:00»</td></tr>
+    <tr><td><b>Массовая</b></td><td>Одна заявка → SMS <b>многим абонентам</b>. Списком получателей или по выборке из справочника</td><td>«Вакцинация от гриппа доступна с 20.09, запись по телефону…»</td></tr>
+  </table>
+  <p><b>Статусы заявки:</b> <code>Created</code> (создана) → <code>Approved</code> (одобрена) → <code>Scheduled</code> (в плане) → <code>Sending</code> (идёт отправка) → <code>Sent</code> (отправлена) / <code>Partial</code> (частично) / <code>Failed</code> (ошибка) / <code>Rejected</code> (отклонена).</p>
+</div>
+
+<div class="card">
+  <h3>3.2 Планирование отправки <span class="req-id">REQ-SCHED</span></h3>
+  <p>Для каждой одобренной заявки задаётся один из режимов отправки:</p>
+  <table>
+    <tr><th>Режим</th><th>Что делает система</th></tr>
+    <tr><td><b>Сейчас</b> <span class="badge">кнопка «Отправить сейчас»</span></td><td>Нажата после одобрения → заявка сразу попадает в очередь и уходит ближайшей партией по правилам интервалов</td></tr>
+    <tr><td><b>За день</b></td><td>Отправка планируется за сутки (например, за 24 часа до времени приёма/события)</td></tr>
+    <tr><td><b>За час</b></td><td>Отправка планируется за 1 час до события</td></tr>
+    <tr><td><b>За 2 недели</b></td><td>Отправка планируется за 14 дней до события (напоминание/анонс)</td></tr>
+    <tr><td><b>Произвольная дата/время</b></td><td>Администратор указывает конкретный момент отправки</td></tr>
+  </table>
+  <p class="small"><b>Важно:</b> расписание (за день / за час / за 2 недели) означает, что система <b>сама</b>, в рассчитанный момент, превращает заявку в очередь отправки — без повторных действий оператора. Кнопка «Сейчас» лишь немедленно запускает уже одобренную заявку.</p>
+</div>
+
+<div class="card">
+  <h3>3.3 Подсистема планирования и «защита от блокировки» SIM <span class="req-id">REQ-RATE</span></h3>
+  <p>Сервер (<b>не телефоны</b>) решает, когда и с какой номер/телефона уйдёт каждое SMS.</p>
+  <ul>
+    <li>Для каждого режима отправки задаётся <b>окно отправки</b> (например, «в течение дня, с 9:00 до 20:00»), внутри которого сервер разносит SMS.</li>
+    <li>Для каждой SIM задаются лимиты: <b>максимум SMS в минуту</b>, <b>в час</b>, <b>в сутки</b> — пороги настраиваются (зависят от оператора).</li>
+    <li>Сервер строит очередь SMS и <b>растягивает её по интервалам</b>: если заявка на 500 SMS, а лимит 60/час — отправка займёт ~8-9 часов с паузами.</li>
+    <li>Очередь распределяется между <b>всеми доступными телефонами</b>, учитывая их лимиты и остатки.</li>
+    <li>Если ни одна SIM не может отправить сейчас (лимит/остаток исчерпан) — SMS остаётся в очереди с нужным приоритетом, и система отправляет позже; в журнале появляется пометка причины задержки.</li>
+    <li>Сервер <b>не превышает лимиты даже при скоплении очереди</b> — приоритет безопасности сим-карты выше скорости рассылки.</li>
+  </ul>
+  <p class="small">Настройки лимитов и окон хранятся в БД и могут различаться для разных SIM (разные операторы).</p>
+</div>
+
+<div class="card">
+  <h3>3.4 Управление телефонами и SIM <span class="req-id">REQ-PHONES</span></h3>
+  <ul>
+    <li>Система ведёт реестр дежурных телефонов: имя, статус (онлайн/офлайн), зарегистрированное приложение SmsAgent.</li>
+    <li>Телефон считается <b>онлайн</b>, если SmsAgent периодически (непрерывно, интервал ~10-30 c) подтверждает серверу своё присутствие.</li>
+    <li>Для каждого телефона ведётся список сим-карт: номер, оператор, лимиты, остаток SMS, статус.</li>
+    <li>Если телефон офлайн — его SIM исключаются из распределения; нагрузку берут остальные.</li>
+    <li>Администратор может временно <b>заблокировать телефон или SIM</b> (например, SIM «улетела в бан»), и сервер перестанет назначать на неё отправки.</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h3>3.5 Остатки и расчёт SMS <span class="req-id">REQ-BALANCE</span></h3>
+  <p><b>Учёт длины SMS:</b> одно «сообщение» = одно реальное SMS по тарифу оператора. Длина формирует число сегментов:</p>
+  <table>
+    <tr><th>Кодировка</th><th>1 SMS</th><th>Составное (многоблочное), каждый блок</th></tr>
+    <tr><td>GSM-7 (латиница/стандарт)</td><td>до 160 символов</td><td>до 153 символов на блок</td></tr>
+    <tr><td>Юникод (кириллица и пр.)</td><td>до 70 символов</td><td>до 67 символов на блок</td></tr>
+  </table>
+  <p><b>Расчёт сервером:</b> для каждого текста сервер считает число SMS-сегментов (с учётом кириллицы/юникода) и <b>списывает именно их</b> с остатка SIM перед назначением на отправку.</p>
+  <ul>
+    <li>Ввод/коррекция остатков производится администратором в Admin (вручную, т.к. операторы не дают API) — поле «Текущий остаток», истории изменений.</li>
+    <li>После фактической отправки SmsAgent сообщает результат; сервер <b>списывает</b> фактическое число сегментов.</li>
+    <li>Если остатка не хватает — часть сообщений не назначается и ждёт пополнения; в журнале фиксируется причина.</li>
+    <li>На каждую SIM ведётся <b>история расхода</b> (дата, заявка, сегментов, остаток после).</li>
+  </ul>
+  <p class="small"><b>Пример:</b> массовая заявка, 120 получателей, текст 150 симв. на кириллице → 150/67 = 3 сегмента на абонента → всего 360 сегментов. Система проверит остатки всех SIM и распределит 360 сегментов по телефонам в пределах лимитов/остатков.</p>
+</div>
+
+<div class="card">
+  <h3>3.6 Фоновая работа SmsAgent на Android <span class="req-id">REQ-BG</span></h3>
+  <ul>
+    <li>Приложение работает как <b>Android Foreground Service</b> (постоянное уведомление «SmsAgent активен») — система Android не «усыпляет» его.</li>
+    <li>Работает при <b>заблокированном экране</b> и когда свернуто в фон.</li>
+    <li>Циклически (интервал настраивается, ~10-30 c) <b>опрашивает сервер</b>: «есть ли задачи для телефона X?»</li>
+    <li>При получении задачи: проверяет наличие SMS-разрешений → отправляет → сообщает серверу результат (успех/сегменты/ошибка).</li>
+    <li>При сбоях (нет сети, нет разрешений, телефон офлайн) — <b>повторные попытки</b> с нарастающей паузой, все факты пишутся на сервер.</li>
+    <li>Освобождение: если у телефона несколько SIM — номер SIM выбирается сервером заранее и передаётся в задаче, SmsAgent отправляет с указанной SIM (через настройки/выбор слота, где возможно).</li>
+    <li>Приложение отображает статус: зарегистрировано, «слушает», сколько отправил сегодня, остатки SIM (данные с сервера).</li>
+  </ul>
+  <p class="small">Требуемые Android-разрешения: <code>SEND_SMS</code> (с Android 11 — <code>READ_PHONE_STATE</code>/выбор SIM по возможности), <code>INTERNET</code>, <code>POST_NOTIFICATIONS</code>, работать поверх блокировки (<code>FOREGROUND_SERVICE</code>). Выдача/настройка разрешений документируется для оператора.</p>
+</div>
+
+<h3>7. Сущности базы данных (MS SQL)</h3>
+<div class="card">
+  <table>
+    <tr><th>Таблица</th><th>Ключевые поля</th></tr>
+    <tr><td><b>Users</b></td><td>Id, Login, PasswordHash, Role (Admin), IsActive</td></tr>
+    <tr><td><b>Patients</b> (справочник получателей)</td><td>Id, FullName, Phone, Email, IsSubscribed, Notes</td></tr>
+    <tr><td><b>SmsRequests</b></td><td>Id, Type (Personal/Mass), Title, Status, CreatedBy, CreatedAt, PlannedSendAt, SendMode (Now/Day/Hour/2Weeks/Custom), ApprovedBy, ApprovedAt, TextTemplate</td></tr>
+    <tr><td><b>RequestRecipients</b></td><td>Id, RequestId, PatientId, Phone, MessageText, SmsSegments, SendAfter, Status, SentAt</td></tr>
+    <tr><td><b>Phones</b></td><td>Id, Name, DeviceId (уникальный ключ SmsAgent), IsActive, LastSeenAt, ApiKey</td></tr>
+    <tr><td><b>SimCards</b></td><td>Id, PhoneId, Number, Operator, LimitPerMin, LimitPerHour, LimitPerDay, Balance (остаток), IsActive</td></tr>
+    <tr><td><b>BalanceLog</b></td><td>Id, SimCardId, Change, Reason, RequestId?, UserId?, CreatedAt, BalanceAfter</td></tr>
+    <tr><td><b>SmsQueue</b> (очередь)</td><td>Id, RecipientId, SimCardId?, PhoneId?, Priority, PlannedAt, Status, Attempts, LastError</td></tr>
+    <tr><td><b>SmsLog</b> (журнал отправок)</td><td>Id, QueueId, SimCardId, PhoneId, Segments, Status, SentAt, ResultMessage</td></tr>
+    <tr><td><b>RateConfig</b> (общие лимиты)</td><td>Id, Name, SendWindowFrom, SendWindowTo, DefaultsPerMin/PerHour/PerDay</td></tr>
+  </table>
+  <p class="small">Связи: <code>SmsQueue → SimCards → Phones</code>, <code>SmsQueue → RequestRecipients → SmsRequests</code>. Все изменения в очереди и квотах — транзакционные (MSSQL), чтобы не допустить двойной отправки при конкурентном опросе телефонов.</p>
+</div>
+
+<h3>8. Состав API (ручки и методы)</h3>
+<div class="card">
+  <table>
+    <tr><th>Группа</th><th>Методы</th></tr>
+    <tr><td><b>Аутентификация</b></td><td><code>POST /api/auth/login</code>, <code>POST /api/auth/refresh</code></td></tr>
+    <tr><td><b>Заявки (Admin)</b></td><td><code>GET /api/requests</code>, <code>POST /api/requests</code> (создать), <code>GET /api/requests/{id}</code>, <code>POST /api/requests/{id}/approve</code>, <code>POST /api/requests/{id}/reject</code>, <code>POST /api/requests/{id}/send-now</code> (кнопка «Отправить сейчас»), <code>GET /api/requests/{id}/status</code></td></tr>
+    <tr><td><b>Получатели</b></td><td><code>GET /api/patients</code>, <code>POST /api/patients</code>, <code>PUT /api/patients/{id}</code></td></tr>
+    <tr><td><b>Телефоны и SIM</b></td><td><code>GET /api/phones</code>, <code>POST /api/phones</code>, <code>POST /api/phones/{id}/sim</code>, <code>PUT /api/sim/{id}/balance</code> (ввод остатка), <code>POST /api/sim/{id}/activate|deactivate</code>, <code>GET /api/sim/{id}/balance-log</code></td></tr>
+    <tr><td><b>Выдача задач SmsAgent</b></td><td><code>POST /api/agent/register</code> (регистрация телефона), <code>GET /api/agent/{deviceId}/tasks</code> (получить задачи — только свои), <code>POST /api/agent/{deviceId}/tasks/{taskId}/result</code> (результат отправки), <code>POST /api/agent/{deviceId}/heartbeat</code> (подтверждение «жив»)</td></tr>
+    <tr><td><b>Интеграция с сайтом клиники</b></td><td><code>POST /api/webhook/requests</code> (сайт создаёт заявку на запись/напоминание), <code>GET /api/webhook/requests/{id}/status</code> (сайт узнаёт статус), <code>POST /api/webhook/requests/{id}/callback</code> (сервер сообщает сайту итог отправки)</td></tr>
+  </table>
+  <p class="small">REST + JSON, документация через OpenAPI (<code>/openapi/v1.json</code>). Все ручки, кроме <code>login</code>, защищены токеном (Bearer JWT); связка Agent использует отдельные <code>ApiKey</code> телефона.</p>
+</div>
+
+<h3>9. Интеграция с сайтом клиники</h3>
+<div class="card">
+  <ul>
+    <li>Весь обмен — по REST/JSON через открытые ручки <b>/api/webhook/…</b>.</li>
+    <li>Сайт может <b>создавать заявки</b> (запись к врачу, перенос, напоминания за время) — без участия оператора кладет их в ту же систему статусов и планирования.</li>
+    <li>Сайт может <b>узнавать статусы</b> своих заявок и получать уведомление о доставке/ошибке через callback.</li>
+    <li>Ключ интеграции (клиника ↔ Api) настраивается отдельно, чтобы сайт не имел доступа к административным ручкам.</li>
+    <li>Зарезервированы поля <code>ExternalId</code> (id заявки на сайте) — для сопоставления заявок между сайтом и системой.</li>
+  </ul>
+</div>
+
+<h3>10. Нефункциональные требования</h3>
+<div class="card">
+  <ul>
+    <li><b>БД:</b> MS SQL Server (Express 2019+ достаточно для объёма клиники); доступ через <code>appsettings.json</code> (строка подключения — секрет, в User Secrets в dev).</li>
+    <li><b>Надёжность:</b> очереди и списание остатков — атомарные операции; повторная отправка исключена даже при падении соединения (идемпотентность задач по <code>taskId</code>).</li>
+    <li><b>Производительность:</b> поддержка массовой рассылки на тысячи получателей — очередь в БД, обработка по интервалам; UI Admin не блокируется созданием большой заявки.</li>
+    <li><b>Безопасность:</b> JWT для Admin, ApiKey для телефонов, интеграционный ключ для сайта; журналирование действий администратора.</li>
+    <li><b>Мониторинг:</b> дашборд в Admin: сколько в очереди, статусы телефонов, остатки SIM, скорость отправки сегодня, ошибки.</li>
+    <li><b>Конфигурируемость:</b> число телефонов, лимиты, окна отправки, кодировка текста — без пересборки, параметрами в БД.</li>
+  </ul>
+</div>
+
+<div class="footer">ClinicHub — Шпаргалка и Техническое задание • Версия 1.0</div>
+</body>
+</html>

@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ClinicHub.Admin.Pages.PairPhonePage"
+             Title="Подключение телефона">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24" Spacing="14" MaximumWidthRequest="560" HorizontalOptions="Center">
+
+            <Label x:Name="TitleLabel" FontSize="20" FontAttributes="Bold" />
+
+            <Label FontSize="13" LineBreakMode="WordWrap"
+                   Text="1. Подключите телефон и этот компьютер к одной Wi-Fi сети.&#10;2. Откройте на телефоне приложение SmsAgent и нажмите «Сканировать QR».&#10;3. Наведите камеру на код ниже. Адрес сервера, номер и ключ заполнятся сами, сервис запустится." />
+
+            <Label x:Name="StatusLabel" FontSize="12" LineBreakMode="WordWrap"
+                   TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray300}}" />
+
+            <Picker x:Name="UrlPicker" Title="Адрес компьютера в сети" IsVisible="False"
+                    SelectedIndexChanged="OnUrlChanged" />
+
+            <!-- QR всегда на белом фоне, иначе его не прочитает камера в тёмной теме. -->
+            <Border BackgroundColor="White" Padding="12" StrokeShape="RoundRectangle 10" Stroke="{StaticResource Gray200}"
+                    HorizontalOptions="Center">
+                <Image x:Name="QrImage" WidthRequest="300" HeightRequest="300" Aspect="AspectFit"
+                       SemanticProperties.Description="QR-код для подключения телефона" />
+            </Border>
+
+            <Label Text="Если камера не читает код, скопируйте ссылку и вставьте её в SmsAgent в поле «Ссылка подключения»:"
+                   FontSize="12" LineBreakMode="WordWrap"
+                   TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray300}}" />
+            <Entry x:Name="LinkEntry" IsReadOnly="True" FontSize="11" />
+            <Button Text="Скопировать ссылку" Clicked="OnCopyClicked" />
+
+            <Label Text="Новый QR-код заменяет прежний ключ: телефон, подключённый раньше, перестанет работать, пока его не подключат заново."
+                   FontSize="11" LineBreakMode="WordWrap"
+                   TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray300}}" />
+
+            <Button Text="Готово" Clicked="OnDoneClicked"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray600}}"
+                    TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

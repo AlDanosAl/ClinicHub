@@ -3,12 +3,26 @@
     x:Class="ClinicHub.Admin.AppShell"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:local="clr-namespace:ClinicHub.Admin"
-    Title="ClinicHub.Admin">
+    xmlns:local="clr-namespace:ClinicHub.Admin.Pages"
+    Title="ClinicHub.Admin"
+    FlyoutBehavior="Disabled">
 
-    <ShellContent
-        Title="Home"
-        ContentTemplate="{DataTemplate local:MainPage}"
-        Route="MainPage" />
+    <TabBar>
+        <Tab Title="Дашборд" Icon="dotnet_bot.png">
+            <ShellContent ContentTemplate="{DataTemplate local:DashboardPage}" Route="dashboard" />
+        </Tab>
+        <Tab Title="Заявки" Icon="dotnet_bot.png">
+            <ShellContent ContentTemplate="{DataTemplate local:RequestsPage}" Route="requests" />
+        </Tab>
+        <Tab Title="Телефоны" Icon="dotnet_bot.png">
+            <ShellContent ContentTemplate="{DataTemplate local:PhonesPage}" Route="phones" />
+        </Tab>
+        <Tab Title="Пациенты" Icon="dotnet_bot.png">
+            <ShellContent ContentTemplate="{DataTemplate local:PatientsPage}" Route="patients" />
+        </Tab>
+        <Tab Title="Авто-рассылки" Icon="dotnet_bot.png">
+            <ShellContent ContentTemplate="{DataTemplate local:AutoRulesPage}" Route="auto-rules" />
+        </Tab>
+    </TabBar>
 
 </Shell>

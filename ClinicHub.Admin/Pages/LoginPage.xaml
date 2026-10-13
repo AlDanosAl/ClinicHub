@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ClinicHub.Admin.Pages.LoginPage"
+             Title="Вход">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="30" Spacing="12" VerticalOptions="Center">
+
+            <Label Text="ClinicHub SMS" FontSize="28" FontAttributes="Bold" HorizontalOptions="Center" />
+            <Label Text="Административный интерфейс" HorizontalOptions="Center" Margin="0,0,0,24" />
+
+            <Label Text="Адрес сервера" />
+            <Entry x:Name="ServerEntry" Text="http://localhost:5112" Placeholder="http://host:port" Keyboard="Url" />
+            <Label Text="Логин" />
+            <Entry x:Name="LoginEntry" Placeholder="admin" />
+            <Label Text="Пароль" />
+            <Entry x:Name="PasswordEntry" IsPassword="True" Placeholder="••••••••" />
+
+            <Label x:Name="ErrorLabel" TextColor="Red" IsVisible="False" LineBreakMode="WordWrap" />
+
+            <Button x:Name="LoginButton" Text="Войти" Clicked="OnLoginClicked" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ClinicHub.Admin.Pages.PatientPickerPage"
+             Title="Выбор получателей">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="?" Clicked="OnHelpClicked" />
+    </ContentPage.ToolbarItems>
+
+    <Grid RowDefinitions="Auto,*,Auto" Padding="12" RowSpacing="8">
+
+        <VerticalStackLayout Grid.Row="0" Spacing="6">
+            <Entry x:Name="SearchEntry" Placeholder="Поиск: ФИО или телефон" />
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                <Entry x:Name="AgeMinEntry" Grid.Column="0" Placeholder="Возраст от" Keyboard="Numeric" />
+                <Entry x:Name="AgeMaxEntry" Grid.Column="1" Placeholder="Возраст до" Keyboard="Numeric" />
+            </Grid>
+            <Picker x:Name="PreviousRequestPicker" Title="Аудитория прошлой заявки (необязательно)" />
+            <HorizontalStackLayout Spacing="8">
+                <CheckBox x:Name="SubscribedOnlyCheck" IsChecked="True" />
+                <Label Text="Только подписанные на рассылки" VerticalOptions="Center" />
+            </HorizontalStackLayout>
+            <Button Text="Найти" Clicked="OnSearchClicked" />
+            <Label x:Name="CountLabel" FontSize="12" TextColor="Gray" />
+        </VerticalStackLayout>
+
+        <CollectionView x:Name="ResultsView" Grid.Row="1" SelectionMode="Multiple" SelectionChanged="OnSelectionChanged">
+            <CollectionView.EmptyView>
+                <Label Text="Никого не найдено" HorizontalOptions="Center" Margin="0,40,0,0" TextColor="Gray" />
+            </CollectionView.EmptyView>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Grid Padding="12,8" ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <VerticalStackLayout Spacing="2">
+                            <Label Text="{Binding FullName}" FontAttributes="Bold" />
+                            <Label Text="{Binding Phone}" FontSize="12" TextColor="Gray" />
+                        </VerticalStackLayout>
+                        <Label Grid.Column="1" Text="{Binding Age}" FontSize="12" TextColor="Gray" VerticalOptions="Center" />
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="8">
+            <Button x:Name="DoneBtn" Grid.Column="0" Text="Готово (0)" Clicked="OnDoneClicked" />
+            <Button Grid.Column="1" Text="Отмена" Clicked="OnCancelClicked" />
+        </Grid>
+    </Grid>
+</ContentPage>

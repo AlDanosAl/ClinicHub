@@ -74,4 +74,10 @@
 	  <ProjectReference Include="..\ClinicHub.Core\ClinicHub.Core.csproj" />
 	</ItemGroup>
 
+	<!-- QR-подключение убрано: страница больше не собирается (файлы можно удалить из проекта) -->
+	<ItemGroup>
+		<MauiXaml Remove="Pages\PairPhonePage.xaml" />
+		<Compile Remove="Pages\PairPhonePage.xaml.cs" />
+	</ItemGroup>
+
 </Project>
