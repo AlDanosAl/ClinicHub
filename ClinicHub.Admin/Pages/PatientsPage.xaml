@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:ClinicHub.Admin.Pages"
+             x:Class="ClinicHub.Admin.Pages.PatientsPage"
+             Title="Пациенты">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="?" Clicked="OnHelpClicked" />
+    </ContentPage.ToolbarItems>
+
+    <Grid RowDefinitions="*,Auto" Padding="0">
+        <CollectionView x:Name="PatientsView" SelectionMode="Single" SelectionChanged="OnPatientSelected">
+            <CollectionView.EmptyView>
+                <Label Text="Пациентов нет" HorizontalOptions="Center" Margin="0,40,0,0" TextColor="Gray" />
+            </CollectionView.EmptyView>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Grid Padding="16,10" ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <VerticalStackLayout Spacing="2">
+                            <Label Text="{Binding FullName}" FontAttributes="Bold" />
+                            <Label Text="{Binding Phone}" FontSize="12" TextColor="Gray" />
+                        </VerticalStackLayout>
+                        <Label Grid.Column="1" Text="{Binding Age}" FontSize="12" TextColor="Gray" VerticalOptions="Center" />
+                        <Label Grid.Column="2"
+                               Text="{Binding IsSubscribed, Converter={x:Static local:SubscriberColorConverter.Instance}}"
+                               FontSize="12" FontAttributes="Bold"
+                               TextColor="{Binding IsSubscribed, Converter={x:Static local:BoolTextColorConverter.Instance}}" />
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <Button Grid.Row="1" Text="Добавить пациента" Clicked="OnAddPatientClicked" Margin="16,8" />
+    </Grid>
+</ContentPage>
