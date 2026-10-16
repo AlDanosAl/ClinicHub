@@ -1,0 +1,229 @@
+<title>Схема ClinicHub</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=Unbounded:wght@500&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+/* Layout: one reading column; diagrams break out to a wider scrollable frame. */
+:root{
+  --bg:#f4f6f6; --surface:#ffffff; --fg:#17232a; --muted:#5a6a71; --line:#c6d1d4;
+  --accent:#1b6a70; --accent-soft:#dbeaeb; --warn:#a4561b;
+  --zone-net:#ecf0f2; --zone-edge:#f7ece3; --zone-lan:#e6f0ee;
+  --font-display:"Unbounded","Golos Text",system-ui,sans-serif;
+  --font-body:"Golos Text",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#10171b; --surface:#172126; --fg:#e2eaed; --muted:#92a3aa; --line:#33434a;
+  --accent:#62b4ba; --accent-soft:#1b383c; --warn:#dc9658;
+  --zone-net:#141d21; --zone-edge:#231c16; --zone-lan:#13211f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10171b; --surface:#172126; --fg:#e2eaed; --muted:#92a3aa; --line:#33434a;
+  --accent:#62b4ba; --accent-soft:#1b383c; --warn:#dc9658;
+  --zone-net:#141d21; --zone-edge:#231c16; --zone-lan:#13211f; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:15px/1.6 var(--font-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 64px}
+.wrap{max-width:1180px;margin:0 auto;display:grid;gap:40px}
+.prose{max-width:68ch;display:grid;gap:12px}
+h1{font:500 clamp(24px,4vw,34px)/1.2 var(--font-display);margin:0;letter-spacing:-.01em;text-wrap:balance}
+h2{font:600 20px/1.3 var(--font-body);margin:0;text-wrap:balance}
+p{margin:0}
+.eyebrow{font:500 12px var(--font-body);text-transform:uppercase;letter-spacing:.08em;color:var(--accent)}
+.muted{color:var(--muted)}
+figure{margin:0;display:grid;gap:12px}
+.frame{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px}
+.frame svg{display:block;width:100%;min-width:980px;height:auto;color:var(--fg)}
+figcaption{max-width:72ch;color:var(--muted);font-size:14px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 24px;font-size:14px}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.sw{width:22px;height:14px;border-radius:3px;border:1.5px solid var(--line);background:var(--surface)}
+.sw.mod{background:var(--accent-soft);border-color:var(--accent)}
+.sw.tmp{border-color:var(--warn);border-style:dashed}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+td code{font:13px var(--font-mono)}
+/* SVG parts */
+.zone-net{fill:var(--zone-net)} .zone-lan{fill:var(--zone-lan)}
+.zone-edge{fill:var(--zone-edge);stroke:var(--warn);stroke-dasharray:6 5}
+.server{fill:none;stroke:var(--accent);stroke-width:1.5}
+.ext rect{fill:var(--surface);stroke:var(--line);stroke-width:1.4}
+.mod rect{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.4}
+.tmp rect{fill:var(--surface);stroke:var(--warn);stroke-width:1.4;stroke-dasharray:5 4}
+.t{font:600 13px var(--font-body);fill:var(--fg)}
+.s{font:400 11px var(--font-body);fill:var(--muted)}
+.zl{font:600 12px var(--font-body);fill:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.lbl{font:400 11px var(--font-body);fill:var(--muted)}
+.lbl.w{fill:var(--warn)}
+.e{fill:none;stroke:var(--fg);stroke-width:1.3}
+.e.w{stroke:var(--warn);stroke-dasharray:5 4}
+.e.a{stroke:var(--accent);stroke-width:1.6}
+.mk{fill:var(--fg)} .mk-w{fill:var(--warn)} .mk-a{fill:var(--accent)}
+</style>
+
+<div class="wrap">
+  <header class="prose">
+    <div class="eyebrow">Регеника · ClinicHub</div>
+    <h1>Схема модулей и интеграций</h1>
+    <p class="muted">Как сервер-хаб в клинике связан с телефонами-шлюзами, мессенджерами, сайтом и внешними системами. Наружу открыт только сайт. Всё остальное ядро делает само исходящими запросами или внутри локальной сети.</p>
+    <div class="legend">
+      <span><i class="sw mod"></i>наши модули</span>
+      <span><i class="sw"></i>внешние системы и устройства</span>
+      <span><i class="sw tmp"></i>временное, на переходный период</span>
+    </div>
+  </header>
+
+  <figure>
+    <div class="frame">
+<svg viewBox="0 0 1240 800" role="img" aria-label="Сервер-хаб в клинике: модули Web, Messaging, Content, Integrations, очередь SMS, согласия и PostgreSQL; связи с телефонами SmsAgent, мессенджерами, МИС, ПроДокторов, Dikidi, Google-таблицей и пациентом через реле.">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk" d="M0,0 L10,5 L0,10 z"/></marker>
+    <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk-w" d="M0,0 L10,5 L0,10 z"/></marker>
+    <marker id="ara" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk-a" d="M0,0 L10,5 L0,10 z"/></marker>
+  </defs>
+
+  <!-- zones -->
+  <rect class="zone-net" x="16" y="16" width="1208" height="230" rx="10"/>
+  <rect class="zone-edge" x="16" y="262" width="1208" height="56" rx="8"/>
+  <rect class="zone-lan" x="16" y="334" width="1208" height="456" rx="10"/>
+  <text class="zl" x="30" y="40">Интернет</text>
+  <text class="zl" x="360" y="295">Граница сети клиники</text>
+  <text class="zl" x="300" y="352">Клиника · локальная сеть</text>
+  <rect class="server" x="190" y="370" width="1000" height="400" rx="10"/>
+  <text class="zl" x="1176" y="758" text-anchor="end">Сервер-хаб · ClinicHub, .NET 10</text>
+
+  <!-- external, row A -->
+  <g class="ext"><rect x="30" y="56" width="140" height="56" rx="6"/><text class="t" x="100" y="79" text-anchor="middle">Пациенты</text><text class="s" x="100" y="97" text-anchor="middle">SMS на телефон</text></g>
+  <g class="ext"><rect x="200" y="56" width="140" height="56" rx="6"/><text class="t" x="270" y="79" text-anchor="middle">Пациент</text><text class="s" x="270" y="97" text-anchor="middle">браузер, сайт</text></g>
+  <g class="ext"><rect x="370" y="56" width="140" height="56" rx="6"/><text class="t" x="440" y="79" text-anchor="middle">Telegram</text><text class="s" x="440" y="97" text-anchor="middle">бот + канал</text></g>
+  <g class="ext"><rect x="540" y="56" width="140" height="56" rx="6"/><text class="t" x="610" y="79" text-anchor="middle">ВКонтакте</text><text class="s" x="610" y="97" text-anchor="middle">группа, бот, канал</text></g>
+  <g class="ext"><rect x="710" y="56" width="140" height="56" rx="6"/><text class="t" x="780" y="79" text-anchor="middle">MAX</text><text class="s" x="780" y="97" text-anchor="middle">бот + канал</text></g>
+  <g class="ext"><rect x="880" y="56" width="140" height="56" rx="6"/><text class="t" x="950" y="79" text-anchor="middle">ПроДокторов</text><text class="s" x="950" y="97" text-anchor="middle">агрегатор, отзывы</text></g>
+  <g class="ext"><rect x="1050" y="56" width="140" height="56" rx="6"/><text class="t" x="1120" y="79" text-anchor="middle">Google-таблица</text><text class="s" x="1120" y="97" text-anchor="middle">архив пациентов</text></g>
+  <!-- external, row B -->
+  <g class="ext"><rect x="880" y="156" width="140" height="56" rx="6"/><text class="t" x="950" y="179" text-anchor="middle">МИС</text><text class="s" x="950" y="197" text-anchor="middle">выбираем, этап 2</text></g>
+  <g class="tmp"><rect x="1050" y="156" width="140" height="56" rx="6"/><text class="t" x="1120" y="179" text-anchor="middle">Dikidi</text><text class="s" x="1120" y="197" text-anchor="middle">журнал записи сейчас</text></g>
+
+  <!-- relay -->
+  <g class="tmp"><rect x="200" y="268" width="140" height="44" rx="6"/><text class="t" x="270" y="287" text-anchor="middle">Реле / белый IP</text><text class="s" x="270" y="303" text-anchor="middle">только HTTPS, без данных</text></g>
+
+  <!-- clinic devices -->
+  <g class="ext"><rect x="30" y="560" width="140" height="70" rx="6"/><text class="t" x="100" y="589" text-anchor="middle">Android-телефоны</text><text class="s" x="100" y="607" text-anchor="middle">SmsAgent, SIM</text></g>
+  <g class="ext"><rect x="30" y="700" width="140" height="56" rx="6"/><text class="t" x="100" y="723" text-anchor="middle">ПК администратора</text><text class="s" x="100" y="741" text-anchor="middle">браузер</text></g>
+
+  <!-- modules -->
+  <g class="mod"><rect x="210" y="420" width="200" height="72" rx="6"/><text class="t" x="310" y="451" text-anchor="middle">Web</text><text class="s" x="310" y="470" text-anchor="middle">сайт · кабинет · админка</text></g>
+  <g class="mod"><rect x="440" y="420" width="200" height="72" rx="6"/><text class="t" x="540" y="451" text-anchor="middle">Messaging</text><text class="s" x="540" y="470" text-anchor="middle">кампании · маршрутизация</text></g>
+  <g class="mod"><rect x="670" y="420" width="200" height="72" rx="6"/><text class="t" x="770" y="451" text-anchor="middle">Content</text><text class="s" x="770" y="470" text-anchor="middle">посты · метрики · inbox</text></g>
+  <g class="mod"><rect x="900" y="420" width="200" height="72" rx="6"/><text class="t" x="1000" y="451" text-anchor="middle">Integrations</text><text class="s" x="1000" y="470" text-anchor="middle">МИС · Dikidi · таблица</text></g>
+  <g class="mod"><rect x="210" y="560" width="200" height="72" rx="6"/><text class="t" x="310" y="591" text-anchor="middle">Очередь SMS</text><text class="s" x="310" y="610" text-anchor="middle">лимиты и паузы SIM</text></g>
+  <g class="mod"><rect x="500" y="560" width="180" height="72" rx="6"/><text class="t" x="590" y="591" text-anchor="middle">Patients + Consents</text><text class="s" x="590" y="610" text-anchor="middle">пациенты, согласия</text></g>
+  <g class="mod"><rect x="720" y="560" width="160" height="72" rx="6"/><text class="t" x="800" y="591" text-anchor="middle">PostgreSQL</text><text class="s" x="800" y="610" text-anchor="middle">одна база</text></g>
+  <g class="ext"><rect x="720" y="672" width="160" height="56" rx="6"/><text class="t" x="800" y="695" text-anchor="middle">Резервные копии</text><text class="s" x="800" y="713" text-anchor="middle">диск + копия вне клиники</text></g>
+
+  <!-- patient web path -->
+  <path class="e a" d="M270,112 V266" marker-end="url(#ara)"/>
+  <text class="lbl" x="278" y="190">HTTPS</text>
+  <path class="e a" d="M270,312 V418" marker-end="url(#ara)"/>
+  <text class="lbl" x="278" y="400">туннель</text>
+
+  <!-- messenger bus -->
+  <path class="e" d="M440,112 V230 M610,112 V230 M780,112 V230 M440,230 H780"/>
+  <text class="lbl" x="690" y="222" text-anchor="middle">Bot API · long polling</text>
+  <path class="e" d="M540,230 V418" marker-end="url(#ar)" marker-start="url(#ar)"/>
+  <text class="lbl" x="548" y="352">личные сообщения</text>
+  <path class="e" d="M770,230 V418" marker-end="url(#ar)" marker-start="url(#ar)"/>
+  <text class="lbl" x="778" y="352">посты, метрики, комментарии</text>
+
+  <!-- MIS & ProDoktorov -->
+  <path class="e" d="M950,114 V154" marker-end="url(#ar)" marker-start="url(#ar)"/>
+  <text class="lbl" x="958" y="139">штатная синхронизация</text>
+  <path class="e" d="M950,212 V418" marker-end="url(#ar)" marker-start="url(#ar)"/>
+  <text class="lbl" x="958" y="400">API: пациенты, записи, слоты</text>
+
+  <!-- Dikidi (read-only, temporary) -->
+  <path class="e w" d="M1160,212 V440 H1102" marker-end="url(#arw)"/>
+  <text class="lbl w" x="1152" y="295" text-anchor="end">только чтение, временно</text>
+
+  <!-- Google sheet import -->
+  <path class="e" d="M1190,84 H1208 V470 H1102" marker-end="url(#ar)"/>
+  <text class="lbl" x="1140" y="486" text-anchor="middle">импорт</text>
+
+  <!-- SMS to patients -->
+  <path class="e" d="M100,558 V114" marker-end="url(#ar)"/>
+  <text class="lbl" x="108" y="190">SMS через</text>
+  <text class="lbl" x="108" y="204">оператора</text>
+
+  <!-- internal -->
+  <path class="e" d="M390,492 V526 H1000 V494" marker-end="url(#ar)"/>
+  <text class="lbl" x="770" y="520" text-anchor="middle">онлайн-запись: слоты и бронь</text>
+  <path class="e" d="M590,492 V558" marker-end="url(#ar)"/>
+  <text class="lbl" x="598" y="548">согласия</text>
+  <path class="e" d="M470,492 V596 H412" marker-end="url(#ar)"/>
+  <text class="lbl" x="464" y="548" text-anchor="end">SMS-задачи</text>
+  <path class="e" d="M210,596 H172" marker-end="url(#ar)"/>
+  <text class="lbl" x="100" y="652" text-anchor="middle">опрос задач по Wi-Fi</text>
+  <path class="e" d="M170,728 H180 V456 H208" marker-end="url(#ar)"/>
+  <text class="lbl" x="100" y="776" text-anchor="middle">веб-админка, LAN или VPN</text>
+  <path class="e" d="M800,632 V670" marker-end="url(#ar)"/>
+  <text class="lbl" x="808" y="656">pg_dump, шифрование</text>
+</svg>
+    </div>
+    <figcaption>Входящий трафик из интернета проходит только по бирюзовому пути: пациент → реле → Web. Боты, сбор метрик и обмен с МИС — это запросы, которые сервер отправляет сам, поэтому белый IP им не нужен. Если реле отключится, внутри клиники продолжат работать и рассылки, и мессенджеры. Модули Web, Messaging, Content и Integrations работают с одной базой PostgreSQL; линии к ней не нарисованы, чтобы не загромождать схему.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="frame">
+<svg viewBox="0 0 1100 250" role="img" aria-label="Маршрут личного сообщения: кампания, проверка цели, проверка согласия для рекламы, маршрутизатор выбирает Telegram, MAX, VK или SMS; при недоставке критичного сообщения дублируется SMS.">
+  <defs>
+    <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="mk" d="M0,0 L10,5 L0,10 z"/></marker>
+    <marker id="arw2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="mk-w" d="M0,0 L10,5 L0,10 z"/></marker>
+  </defs>
+  <g class="mod"><rect x="10" y="90" width="160" height="52" rx="6"/><text class="t" x="90" y="112" text-anchor="middle">Кампания</text><text class="s" x="90" y="129" text-anchor="middle">или авто-правило</text></g>
+  <g class="mod"><rect x="220" y="90" width="160" height="52" rx="6"/><text class="t" x="300" y="112" text-anchor="middle">Цель сообщения</text><text class="s" x="300" y="129" text-anchor="middle">сервис или реклама</text></g>
+  <g class="mod"><rect x="440" y="90" width="160" height="52" rx="6"/><text class="t" x="520" y="112" text-anchor="middle">Согласие</text><text class="s" x="520" y="129" text-anchor="middle">на этот канал есть?</text></g>
+  <g class="mod"><rect x="660" y="90" width="140" height="52" rx="6"/><text class="t" x="730" y="112" text-anchor="middle">Маршрутизатор</text><text class="s" x="730" y="129" text-anchor="middle">первый доступный</text></g>
+  <g class="ext"><rect x="440" y="190" width="160" height="40" rx="6"/><text class="t" x="520" y="215" text-anchor="middle">Пропуск, в отчёт</text></g>
+  <g class="ext"><rect x="870" y="20" width="170" height="36" rx="6"/><text class="t" x="955" y="43" text-anchor="middle">1 · Telegram</text></g>
+  <g class="ext"><rect x="870" y="72" width="170" height="36" rx="6"/><text class="t" x="955" y="95" text-anchor="middle">2 · MAX</text></g>
+  <g class="ext"><rect x="870" y="124" width="170" height="36" rx="6"/><text class="t" x="955" y="147" text-anchor="middle">3 · ВКонтакте</text></g>
+  <g class="ext"><rect x="870" y="176" width="170" height="36" rx="6"/><text class="t" x="955" y="199" text-anchor="middle">4 · SMS с SIM</text></g>
+
+  <path class="e" d="M170,116 H218" marker-end="url(#ar2)"/>
+  <path class="e" d="M380,116 H438" marker-end="url(#ar2)"/>
+  <text class="lbl" x="409" y="108" text-anchor="middle">реклама</text>
+  <path class="e" d="M600,116 H658" marker-end="url(#ar2)"/>
+  <text class="lbl" x="629" y="108" text-anchor="middle">да</text>
+  <path class="e" d="M300,90 V40 H730 V88" marker-end="url(#ar2)"/>
+  <text class="lbl" x="515" y="32" text-anchor="middle">сервисное (напоминание о визите): без маркетингового согласия</text>
+  <path class="e" d="M520,142 V188" marker-end="url(#ar2)"/>
+  <text class="lbl" x="528" y="170">нет</text>
+  <path class="e" d="M800,116 H830 M830,38 V194 M830,38 H868 M830,90 H868 M830,142 H868 M830,194 H868"/>
+  <path class="e" d="M858,38 H868 M858,90 H868 M858,142 H868 M858,194 H868" marker-end="url(#ar2)"/>
+  <path class="e w" d="M1040,38 H1058 M1040,90 H1058 M1040,142 H1058 M1058,38 V194 H1042" marker-end="url(#arw2)"/>
+  <text class="lbl w" x="1076" y="116" text-anchor="middle" transform="rotate(-90 1076 116)">не доставлено за N ч</text>
+</svg>
+    </div>
+    <figcaption>Каналы перебираются по порядку, и берётся первый, где у пациента есть привязка, а для рекламы ещё и согласие. Порядок настраивается в админке. Для критичных сервисных сообщений действует страховка: если сообщение в мессенджер не доставлено за N часов, хаб дублирует его SMS.</figcaption>
+  </figure>
+
+  <section class="prose" style="max-width:none">
+    <h2>Интеграции по этапам</h2>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Система</th><th>Как связываемся</th><th>Направление</th><th>Этап</th></tr></thead>
+        <tbody>
+          <tr><td>Android-телефоны</td><td><code>REST</code>, телефон опрашивает сервер по Wi-Fi</td><td>задачи → телефон, статусы и входящие SMS → сервер</td><td>есть, доработка в 1</td></tr>
+          <tr><td>Google-таблица</td><td><code>Sheets API</code> или выгрузка CSV</td><td>в хаб, с проверкой дублей</td><td>1</td></tr>
+          <tr><td>Dikidi</td><td>неофициальный API, только чтение</td><td>записи → хаб (для напоминаний)</td><td>1, до внедрения МИС</td></tr>
+          <tr><td>МИС</td><td><code>REST API</code> + вебхуки вендора</td><td>в обе стороны</td><td>2</td></tr>
+          <tr><td>ПроДокторов</td><td>штатная интеграция МИС</td><td>МИС ↔ ПроДокторов, от нас только ссылка на отзыв</td><td>2</td></tr>
+          <tr><td>Telegram</td><td><code>Bot API</code>, long polling</td><td>в обе стороны</td><td>3, канал — 5</td></tr>
+          <tr><td>ВКонтакте</td><td><code>VK API</code>, Bots Long Poll</td><td>в обе стороны</td><td>3, группа — 5</td></tr>
+          <tr><td>MAX</td><td>Bot API MAX, после верификации организации</td><td>в обе стороны</td><td>3, канал — 5</td></tr>
+          <tr><td>Сайт</td><td>Blazor на хабе, наружу через реле или белый IP</td><td>пациент → хаб</td><td>4</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
