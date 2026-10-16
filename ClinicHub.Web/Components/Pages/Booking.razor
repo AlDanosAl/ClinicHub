@@ -1,0 +1,335 @@
+@page "/zapis"
+@using ClinicHub.Core
+@inject IOptionsSnapshot<SiteContent> Content
+@inject IBookingSource Source
+@inject TimeProvider Clock
+
+<Seo Title="@($"Онлайн-запись — {Content.Value.Clinic.Name}")"
+     Description="Запись к врачу-косметологу онлайн: выберите услугу, врача и свободное время."
+     Path="/zapis" />
+
+<div class="container booking">
+    <h1 class="display display--md">Онлайн-запись</h1>
+
+    @if (Source.IsDemo)
+    {
+        <p class="notice" role="note">
+            Демо-режим: расписание примерное, запись никуда не отправляется.
+            Настоящие слоты появятся после подключения МИС.
+        </p>
+    }
+
+    <ol class="steps" aria-label="Шаги записи">
+        @foreach (var (n, title, href) in StepList())
+        {
+            var state = n < step ? "done" : n == step ? "current" : "todo";
+            <li class="steps__item steps__item--@state" aria-current="@(n == step ? "step" : null)">
+                @if (n < step && href is not null && !done)
+                {
+                    <a href="@href">@n. @title ✓</a>
+                }
+                else if (n < step)
+                {
+                    <span>@n. @title ✓</span>
+                }
+                else
+                {
+                    <span>@n. @title</span>
+                }
+            </li>
+        }
+    </ol>
+
+    @if (done)
+    {
+        <section class="card booking__done" aria-labelledby="done-title">
+            <h2 id="done-title" class="h3">Заявка принята</h2>
+            <p>
+                @service!.Name, @ClinicTime.FormatSlot(slot!.StartUtc), врач: @DoctorName(slot.DoctorId).
+                Код подтверждения придёт на @PhoneNumbers.FormatRu(phoneE164) (@ChannelName(Form!.Channel)).
+            </p>
+            @if (Source.IsDemo)
+            {
+                <p class="muted small">В демо-режиме код не отправляется и запись не создаётся.</p>
+            }
+            <a class="btn btn--outline" href="/">На главную</a>
+        </section>
+    }
+    else
+    {
+        <div class="booking__layout">
+            <section class="card booking__main" aria-labelledby="step-title">
+                @switch (step)
+                {
+                    case 1:
+                        <h2 id="step-title" class="h3">Выберите услугу</h2>
+                        <ul class="choice-list">
+                            @foreach (var s in ServicesForDoctor())
+                            {
+                                <li>
+                                    <a class="choice" href="@Url(s.Id, Doctor)">
+                                        <span class="choice__title">@s.Name</span>
+                                        <span class="muted small">@s.Price · около @s.DurationMinutes мин</span>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                        break;
+
+                    case 2:
+                        <h2 id="step-title" class="h3">Выберите врача</h2>
+                        <ul class="choice-list">
+                            <li>
+                                <a class="choice" href="@Url(service!.Id, BookingQuery.AnyDoctor)">
+                                    <span class="choice__title">Любой свободный</span>
+                                    <span class="muted small">Покажем все свободные окна</span>
+                                </a>
+                            </li>
+                            @foreach (var d in DoctorsForService())
+                            {
+                                <li>
+                                    <a class="choice" href="@Url(service.Id, d.Id)">
+                                        <span class="choice__title">@d.Name</span>
+                                        <span class="muted small">@d.Role</span>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                        break;
+
+                    case 3:
+                        <h2 id="step-title" class="h3">День</h2>
+                        <ul class="day-list">
+                            @foreach (var d in days)
+                            {
+                                var selected = d.Date == date;
+                                <li>
+                                    @if (d.HasSlots)
+                                    {
+                                        <a class="day @(selected ? "day--on" : "")" href="@Url(service!.Id, Doctor, d.Date)"
+                                           aria-current="@(selected ? "date" : null)">
+                                            <span class="day__wd">@d.Date.ToString("ddd", ClinicTime.Ru)</span>
+                                            <span class="day__num">@d.Date.Day</span>
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="day day--off" title="Нет свободного времени">
+                                            <span class="day__wd">@d.Date.ToString("ddd", ClinicTime.Ru)</span>
+                                            <span class="day__num">@d.Date.Day</span>
+                                        </span>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                        <h2 class="h3">Свободное время@(date is { } dd ? $", {dd.ToString("d MMMM", ClinicTime.Ru)}" : "")</h2>
+                        @if (slots.Count == 0)
+                        {
+                            <p class="muted">На ближайшие две недели свободного времени нет. Позвоните нам, подберём окно.</p>
+                        }
+                        else
+                        {
+                            <ul class="slot-list">
+                                @foreach (var s in slots)
+                                {
+                                    var local = TimeOnly.FromDateTime(ClinicTime.ToLocal(s.StartUtc).DateTime);
+                                    <li><a class="slot" href="@Url(service!.Id, Doctor, date, local)">@ClinicTime.FormatTime(s.StartUtc)</a></li>
+                                }
+                            </ul>
+                        }
+                        break;
+
+                    case 4:
+                        <h2 id="step-title" class="h3">Подтверждение</h2>
+                        <EditForm Model="Form" FormName="booking" OnSubmit="Submit" class="stack" novalidate>
+                            @if (errors.Count > 0)
+                            {
+                                <div class="form-errors" role="alert">
+                                    <ul>
+                                        @foreach (var e in errors)
+                                        {
+                                            <li>@e</li>
+                                        }
+                                    </ul>
+                                </div>
+                            }
+                            <div class="field">
+                                <label for="b-phone">Телефон</label>
+                                <InputText id="b-phone" type="tel" autocomplete="tel" inputmode="tel"
+                                           placeholder="+7 999 123-45-67" @bind-Value="Form!.Phone" />
+                            </div>
+                            <fieldset class="field">
+                                <legend>Куда прислать код и напоминание</legend>
+                                <InputRadioGroup @bind-Value="Form.Channel">
+                                    @foreach (var ch in Enum.GetValues<ReminderChannel>())
+                                    {
+                                        <label class="radio"><InputRadio Value="ch" /> @ChannelName(ch)</label>
+                                    }
+                                </InputRadioGroup>
+                            </fieldset>
+                            <label class="check">
+                                <InputCheckbox @bind-Value="Form.PersonalDataConsent" />
+                                <span>Согласен(на) на обработку персональных данных по <a href="/politika">политике клиники</a></span>
+                            </label>
+                            <label class="check">
+                                <InputCheckbox @bind-Value="Form.MarketingConsent" />
+                                <span>Хочу получать новости и акции (необязательно, можно отключить в любой момент)</span>
+                            </label>
+                            <button class="btn btn--primary btn--lg" type="submit">Получить код подтверждения</button>
+                        </EditForm>
+                        break;
+                }
+            </section>
+
+            <aside class="card booking__summary" aria-labelledby="summary-title">
+                <h2 id="summary-title" class="h3">Ваша запись</h2>
+                <dl class="summary">
+                    <dt>Услуга</dt>
+                    <dd>@(service?.Name ?? "—")</dd>
+                    <dt>Врач</dt>
+                    <dd>@(slot is not null ? DoctorName(slot.DoctorId) : doctor?.Name ?? (Doctor == BookingQuery.AnyDoctor ? "Любой свободный" : "—"))</dd>
+                    <dt>Когда</dt>
+                    <dd class="tabular">@(slot is not null ? ClinicTime.FormatSlot(slot.StartUtc) : "—")</dd>
+                    <dt>Стоимость</dt>
+                    <dd>@(service?.Price ?? "—")</dd>
+                </dl>
+            </aside>
+        </div>
+    }
+</div>
+
+@code {
+    private const int DaysAhead = 14;
+
+    [SupplyParameterFromQuery(Name = "service")] public string? ServiceId { get; set; }
+    [SupplyParameterFromQuery(Name = "doctor")] public string? Doctor { get; set; }
+    [SupplyParameterFromQuery(Name = "date")] public string? DateParam { get; set; }
+    [SupplyParameterFromQuery(Name = "time")] public string? TimeParam { get; set; }
+
+    [SupplyParameterFromForm(FormName = "booking")] private BookingForm? Form { get; set; }
+
+    private SiteContent site = default!;
+    private ServiceItem? service;
+    private DoctorItem? doctor;
+    private DateOnly? date;
+    private BookingSlot? slot;
+    private List<BookingSlot> slots = [];
+    private List<(DateOnly Date, bool HasSlots)> days = [];
+    private int step;
+    private bool done;
+    private string phoneE164 = "";
+    private readonly List<string> errors = [];
+
+    private bool DoctorChosen => Doctor == BookingQuery.AnyDoctor || doctor is not null;
+    private string? DoctorFilter => doctor?.Id;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Form ??= new BookingForm();
+        site = Content.Value;
+        service = site.Services.FirstOrDefault(s => s.Id == ServiceId);
+        doctor = site.Doctors.FirstOrDefault(d => d.Id == Doctor);
+
+        // Врач, который не ведёт выбранную услугу, — сбрасываем выбор врача.
+        if (service is not null && doctor is not null && !Treats(doctor, service.Id))
+        {
+            doctor = null;
+            Doctor = null;
+        }
+
+        if (service is null) { step = 1; return; }
+        if (!DoctorChosen) { step = 2; return; }
+
+        step = 3;
+        await LoadDaysAsync();
+
+        var time = BookingQuery.ParseTime(TimeParam);
+        if (date is { } d && time is { } t)
+        {
+            var at = ClinicTime.FromLocal(d, t);
+            slot = slots.FirstOrDefault(s => s.StartUtc == at);
+            if (slot is not null)
+                step = 4;
+        }
+    }
+
+    private async Task LoadDaysAsync()
+    {
+        var today = ClinicTime.Today(Clock);
+        var requested = BookingQuery.ParseDate(DateParam);
+        DateOnly? firstFree = null;
+
+        for (var i = 0; i < DaysAhead; i++)
+        {
+            var d = today.AddDays(i);
+            var daySlots = await Source.GetSlotsAsync(service!.Id, DoctorFilter, d);
+            days.Add((d, daySlots.Count > 0));
+            if (daySlots.Count > 0)
+                firstFree ??= d;
+            if (d == requested && daySlots.Count > 0)
+                slots = daySlots.ToList();
+        }
+
+        if (slots.Count > 0)
+        {
+            date = requested;
+        }
+        else if (firstFree is { } f)
+        {
+            // Выбранный день занят или не указан — показываем ближайший свободный.
+            date = f;
+            slots = (await Source.GetSlotsAsync(service!.Id, DoctorFilter, f)).ToList();
+        }
+    }
+
+    private void Submit()
+    {
+        errors.Clear();
+        if (!PhoneNumbers.TryNormalizeRuMobile(Form!.Phone, out phoneE164))
+            errors.Add("Укажите мобильный номер в формате +7 999 123-45-67.");
+        if (!Form.PersonalDataConsent)
+            errors.Add("Без согласия на обработку персональных данных записать вас не получится.");
+        if (errors.Count > 0)
+            return;
+
+        // TODO(PLAN 4.3): отправить код через SIM-шлюз или бота, создать запись в МИС через IBookingSource,
+        // согласие на рекламу записать в журнал Consents. Номер телефона в логи не пишем.
+        done = true;
+        step = 5;
+    }
+
+    private bool Treats(DoctorItem d, string serviceId) => d.ServiceIds.Count == 0 || d.ServiceIds.Contains(serviceId);
+
+    private IEnumerable<ServiceItem> ServicesForDoctor() =>
+        doctor is null ? site.Services : site.Services.Where(s => Treats(doctor, s.Id));
+
+    private IEnumerable<DoctorItem> DoctorsForService() => site.Doctors.Where(d => Treats(d, service!.Id));
+
+    private string DoctorName(string id) => site.Doctors.FirstOrDefault(d => d.Id == id)?.Name ?? "—";
+
+    private static string ChannelName(ReminderChannel ch) => ch switch
+    {
+        ReminderChannel.Sms => "SMS",
+        ReminderChannel.Telegram => "Telegram",
+        ReminderChannel.Max => "MAX",
+        _ => ch.ToString(),
+    };
+
+    private static string Url(string? service = null, string? doctor = null, DateOnly? date = null, TimeOnly? time = null)
+    {
+        var parts = new List<string>();
+        if (!string.IsNullOrEmpty(service)) parts.Add("service=" + Uri.EscapeDataString(service));
+        if (!string.IsNullOrEmpty(doctor)) parts.Add("doctor=" + Uri.EscapeDataString(doctor));
+        if (date is { } d) parts.Add("date=" + BookingQuery.FormatDate(d));
+        if (time is { } t) parts.Add("time=" + BookingQuery.FormatTime(t));
+        return parts.Count == 0 ? "/zapis" : "/zapis?" + string.Join("&", parts);
+    }
+
+    private IEnumerable<(int N, string Title, string? Href)> StepList()
+    {
+        yield return (1, "Услуга", Url(doctor: Doctor));
+        yield return (2, "Врач", Url(service?.Id));
+        yield return (3, "Дата и время", Url(service?.Id, Doctor, date));
+        yield return (4, "Подтверждение", null);
+    }
+}

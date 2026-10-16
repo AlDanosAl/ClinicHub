@@ -1,0 +1,28 @@
+@* Телефон клиники: ссылка tel:, если номер уже настоящий; иначе просто текст (заглушка). *@
+@using ClinicHub.Core
+
+@if (Tel is { } tel)
+{
+    <a class="@CssClass" href="tel:@tel">@Phone</a>
+}
+else
+{
+    <span class="@CssClass">@Phone</span>
+}
+
+@code {
+    [Parameter, EditorRequired] public string Phone { get; set; } = "";
+    [Parameter] public string? CssClass { get; set; }
+
+    // Городские номера тоже бывают, поэтому не требуем мобильный: берём цифры как есть.
+    private string? Tel
+    {
+        get
+        {
+            if (PhoneNumbers.TryNormalizeRuMobile(Phone, out var e164))
+                return e164;
+            var digits = new string(Phone.Where(char.IsAsciiDigit).ToArray());
+            return digits.Length is >= 10 and <= 11 ? "+" + (digits.Length == 10 ? "7" + digits : "7" + digits[1..]) : null;
+        }
+    }
+}
