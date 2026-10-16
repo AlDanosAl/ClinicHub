@@ -75,3 +75,12 @@ dotnet run --launch-profile http
   Файл перечитывается на лету, перезапуск не нужен.
 - Источник свободного времени — интерфейс `IBookingSource`. Сейчас `DemoBookingSource`, после выбора МИС будет её адаптер.
 - Публичные страницы работают без JavaScript (static SSR), поэтому их нормально индексируют поисковики.
+
+**Установка на компьютер клиники (для показа в локальной сети):**
+
+```powershell
+powershell -ExecutionPolicy Bypass -File deploy\web\build-package.ps1
+```
+
+Скрипт соберёт `artifacts\ClinicHub-Web-<дата>.zip` (автономная сборка, .NET на компьютер клиники ставить не нужно).
+Архив распаковать на компьютере клиники и запустить `install.cmd`. Подробно — в `deploy/web/README.txt`.
