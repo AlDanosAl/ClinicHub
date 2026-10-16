@@ -5,7 +5,22 @@ namespace ClinicHub.Web.Booking;
 /// <summary>Время клиники: храним UTC, показываем по Москве (CLAUDE.md).</summary>
 public static class ClinicTime
 {
-    public static readonly TimeZoneInfo Zone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Moscow");
+    public static readonly TimeZoneInfo Zone = FindMoscow();
+
+    /// <summary>
+    /// IANA-имя «Europe/Moscow» Windows понимает только при наличии ICU (Windows 10 1903+). На старых Windows
+    /// и Windows Server 2016 пробуем Windows-имя, а в крайнем случае берём фиксированные UTC+3 (переходов на летнее время в РФ нет).
+    /// </summary>
+    private static TimeZoneInfo FindMoscow()
+    {
+        foreach (var id in new[] { "Europe/Moscow", "Russian Standard Time" })
+        {
+            if (TimeZoneInfo.TryFindSystemTimeZoneById(id, out var zone))
+                return zone;
+        }
+        return TimeZoneInfo.CreateCustomTimeZone("MSK", TimeSpan.FromHours(3), "Москва", "Москва");
+    }
+
     public static readonly CultureInfo Ru = CultureInfo.GetCultureInfo("ru-RU");
 
     public static DateTimeOffset ToLocal(DateTimeOffset utc) => TimeZoneInfo.ConvertTime(utc, Zone);

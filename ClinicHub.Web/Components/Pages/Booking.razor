@@ -19,6 +19,11 @@
         </p>
     }
 
+    @if (hint is not null)
+    {
+        <p class="notice" role="status">@hint</p>
+    }
+
     <ol class="steps" aria-label="Шаги записи">
         @foreach (var (n, title, href) in StepList())
         {
@@ -220,6 +225,9 @@
     private string phoneE164 = "";
     private readonly List<string> errors = [];
 
+    /// <summary>Почему выбор сброшен (врач не ведёт услугу, время заняли). Без неё человек не понимает, почему его вернуло назад.</summary>
+    private string? hint;
+
     private bool DoctorChosen => Doctor == BookingQuery.AnyDoctor || doctor is not null;
     private string? DoctorFilter => doctor?.Id;
 
@@ -233,6 +241,7 @@
         // Врач, который не ведёт выбранную услугу, — сбрасываем выбор врача.
         if (service is not null && doctor is not null && !Treats(doctor, service.Id))
         {
+            hint = $"{doctor.Name} не ведёт услугу «{service.Name}». Выберите другого врача или «Любой свободный».";
             doctor = null;
             Doctor = null;
         }
@@ -250,6 +259,8 @@
             slot = slots.FirstOrDefault(s => s.StartUtc == at);
             if (slot is not null)
                 step = 4;
+            else
+                hint = "Это время уже занято или прошло. Выберите другое.";
         }
     }
 
