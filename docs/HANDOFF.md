@@ -18,6 +18,7 @@
 | Ветка | Кто | Меняет схему БД? | Суть |
 |---|---|---|---|
 | feature/api-postgres | AlDanosAl | **да** (миграция `CalendarDateColumns`) | PLAN 1.1 на SQL Server (ADR-0009, Issue #18): секреты, пароль админа, UTC. PR в `master` на ревью. Пока не принята, миграции сервера никто другой не трогает |
+| feature/catalog-visits | AlDanosAl | **да** (схема `catalog`, таблицы визитов, `Patients.LastVisitAt`) | PLAN 1.8–1.9, Issue #13. Ветка от `feature/api-postgres`, PR после её принятия |
 
 ---
 
