@@ -8,6 +8,7 @@
 | `ClinicHub.Admin` | Программа администратора для Windows (заявки, пациенты, телефоны). |
 | `ClinicHub.SmsAgent` | Приложение для Android: подключается к серверу и отправляет SMS с SIM телефона. |
 | `ClinicHub.Core` | Общие классы (DTO и сущности). |
+| `ClinicHub.Web` | Сайт клиники (Blazor, черновик): главная и онлайн-запись. См. раздел 6. |
 
 ## 1. Запуск сервера на компьютере
 
@@ -85,3 +86,27 @@ C:\Users\xcx7276\source\repos\ClinicHub.SmsAgent\bin\Release\net10.0-android\pub
 - Общий журнал сервера и телефонов: `ClinicHub.Api\logs\clinichub.log`.
 - С самого компьютера: `http://localhost:5112/api/debug/log` и `http://localhost:5112/api/debug/state`.
 - Проверка доступности сервера с телефона (в браузере): `http://<IP компьютера>:5112/api/health` — должно быть `ok`.
+
+## 6. Сайт (`ClinicHub.Web`)
+
+```powershell
+cd ClinicHub.Web
+dotnet run --launch-profile http
+```
+
+Сайт откроется на `http://localhost:5242`. Он пока не связан с сервером: онлайн-запись работает в демо-режиме
+(выдуманное расписание, заявка никуда не уходит, на странице висит предупреждение).
+
+- Тексты, услуги, врачи, контакты лежат в `ClinicHub.Web/site-content.json`. Значения в `[КВАДРАТНЫХ СКОБКАХ]` — заглушки.
+  Файл перечитывается на лету, перезапуск не нужен.
+- Источник свободного времени — интерфейс `IBookingSource`. Сейчас `DemoBookingSource`, после выбора МИС будет её адаптер.
+- Публичные страницы работают без JavaScript (static SSR), поэтому их нормально индексируют поисковики.
+
+**Установка на компьютер клиники (для показа в локальной сети):**
+
+```powershell
+powershell -ExecutionPolicy Bypass -File deploy\web\build-package.ps1
+```
+
+Скрипт соберёт `artifacts\ClinicHub-Web-<дата>.zip` (автономная сборка, .NET на компьютер клиники ставить не нужно).
+Архив распаковать на компьютере клиники и запустить `install.cmd`. Подробно — в `deploy/web/README.txt`.
