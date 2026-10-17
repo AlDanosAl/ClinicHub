@@ -18,6 +18,7 @@ public static class PhoneNumbers
 
         var digits = new char[20];
         var n = 0;
+        var plus = false;
         foreach (var c in input)
         {
             if (char.IsAsciiDigit(c))
@@ -26,16 +27,24 @@ public static class PhoneNumbers
                     return false;
                 digits[n++] = c;
             }
-            else if (c is not (' ' or '-' or '(' or ')' or '+' or '.' or ' '))
+            else if (c == '+')
+            {
+                // «+» допустим один раз и только перед цифрами: «+7 999…», но не «9+99…».
+                if (plus || n > 0)
+                    return false;
+                plus = true;
+            }
+            else if (c is not (' ' or '-' or '(' or ')' or '.' or '\u00A0'))
             {
                 return false;
             }
         }
 
         string national;
-        if (n == 11 && (digits[0] == '7' || digits[0] == '8'))
+        // С плюсом код страны только 7: «+8 999…» — не российский номер.
+        if (n == 11 && (digits[0] == '7' || (digits[0] == '8' && !plus)))
             national = new string(digits, 1, 10);
-        else if (n == 10)
+        else if (n == 10 && !plus)
             national = new string(digits, 0, 10);
         else
             return false;
