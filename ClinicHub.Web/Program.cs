@@ -4,6 +4,9 @@ using ClinicHub.Web.Booking;
 using ClinicHub.Web.Components;
 using ClinicHub.Web.Data;
 using ClinicHub.Web.Site;
+using Microsoft.AspNetCore.Components.Endpoints;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging.EventLog;
 
@@ -25,17 +28,21 @@ if (logDirectory is not null)
     builder.Logging.AddProvider(provider);
 }
 
+// Ключи шифрования (антифорджери, сохранённое подключение к базе) — в config\keys рядом с сайтом,
+// под защитой DPAPI учётной записи сайта. Без явной папки служба держала бы их в своём профиле Windows.
+var configDirectory = DbConnectionStore.ConfigDirectory(builder.Configuration, builder.Environment);
+var dataProtection = builder.Services.AddDataProtection()
+    .SetApplicationName("ClinicHub.Web")
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(configDirectory, "keys")));
+if (OperatingSystem.IsWindows())
+    dataProtection.ProtectKeysWithDpapi();
+
 // БД сайта: страницы из блоков и настройки, схема site в общей базе ClinicHub (ADR-0007).
-// Строка подключения — user-secrets или переменная окружения ConnectionStrings__ClinicHub, в git её нет (CLAUDE.md).
-var connectionString = builder.Configuration.GetConnectionString("ClinicHub");
-if (string.IsNullOrWhiteSpace(connectionString))
-{
-    throw new InvalidOperationException(
-        "Не задана строка подключения ConnectionStrings:ClinicHub. При разработке: " +
-        "dotnet user-secrets set \"ConnectionStrings:ClinicHub\" \"Server=...;Database=ClinicHub;Trusted_Connection=True;TrustServerCertificate=True\" " +
-        "(в папке ClinicHub.Web). На сервере — переменная окружения ConnectionStrings__ClinicHub.");
-}
-builder.Services.AddDbContextFactory<SiteDbContext>(o => SiteDbContext.Configure(o, connectionString));
+// Подключение — из user-secrets / переменной окружения ConnectionStrings__ClinicHub (разработка)
+// или со страницы /nastroika-bd (компьютер клиники). Пока его нет, сайт показывает только эту страницу.
+builder.Services.AddSingleton<DbConnectionStore>();
+builder.Services.AddSingleton<IDbContextFactory<SiteDbContext>, SiteDbContextFactory>();
+builder.Services.AddHostedService<DbConnectionMonitor>();
 builder.Services.AddScoped<SiteStore>();
 
 // site-content.json: каталог услуг и врачей, пока его нет в ClinicHub.Api (Issue #13), и начальное наполнение пустой БД.
@@ -56,7 +63,7 @@ builder.Services.AddRazorComponents();
 
 var app = builder.Build();
 
-await SiteSeeder.MigrateAndSeedAsync(app.Services);
+await app.Services.GetRequiredService<DbConnectionStore>().InitializeAsync();
 
 if (!app.Environment.IsDevelopment())
 {
@@ -64,6 +71,22 @@ if (!app.Environment.IsDevelopment())
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseAntiforgery();
+
+// Пока база не готова, все страницы ведут на настройку подключения. Статические файлы (стили) отдаются как обычно.
+app.Use(async (context, next) =>
+{
+    var store = context.RequestServices.GetRequiredService<DbConnectionStore>();
+    var path = context.Request.Path;
+    var endpoint = context.GetEndpoint();
+    var isPage = endpoint is null || endpoint.Metadata.GetMetadata<ComponentTypeMetadata>() is not null
+        || path.Equals("/robots.txt") || path.Equals("/sitemap.xml");
+    if (store.State == DbState.Ready || !isPage || path.StartsWithSegments(DbConnectionStore.SetupPath))
+    {
+        await next();
+        return;
+    }
+    context.Response.Redirect(DbConnectionStore.SetupPath);
+});
 
 app.MapStaticAssets();
 app.MapSeoEndpoints();

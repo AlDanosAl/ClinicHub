@@ -7,6 +7,8 @@
 #   3. Регистрирует службу Windows «ClinicHub Web» от имени LOCAL SERVICE (без лишних прав): сайт стартует
 #      вместе с Windows, без входа пользователя, и перезапускается через минуту, если упал.
 #      Журнал — в C:\ClinicHub\Web\logs и в журнале событий Windows «Приложение» (источник ClinicHub.Web).
+#      Подключение к SQL Server задаётся в браузере на странице http://localhost:<порт>/nastroika-bd и хранится
+#      зашифрованным в C:\ClinicHub\Web\config (при переустановке сохраняется).
 #   4. Открывает порт в брандмауэре только для частной и доменной сети и только для адресов из локальной подсети.
 #   5. Проверяет, что сайт отвечает, и кладёт ярлык на рабочий стол.
 #
@@ -114,8 +116,8 @@ $keepContent = Test-Path $contentFile
 if ($keepContent) {
     Copy-Item $contentFile "$contentFile.bak" -Force
 }
-# Старые файлы версии убираем, чтобы не оставались лишние (контент сохранён выше, журналы не трогаем).
-Get-ChildItem $InstallDir -Force | Where-Object { $_.Name -notlike "site-content.json*" -and $_.Name -ne "logs" } |
+# Старые файлы версии убираем, чтобы не оставались лишние (контент сохранён выше; журналы и подключение к базе не трогаем).
+Get-ChildItem $InstallDir -Force | Where-Object { $_.Name -notlike "site-content.json*" -and $_.Name -notin "logs", "config" } |
     Remove-Item -Recurse -Force
 Copy-Item (Join-Path $Source "*") $InstallDir -Recurse -Force -Exclude "site-content.json"
 if ($keepContent) {
@@ -125,13 +127,18 @@ if ($keepContent) {
 }
 
 # ── Права на папку ───────────────────────────────────────────────────────────
-# Служба работает от LOCAL SERVICE: сайт может только читать свои файлы, писать — только в logs.
+# Служба работает от LOCAL SERVICE: сайт может только читать свои файлы, писать — только в logs и config.
+# В config — подключение к базе и ключи шифрования: читать их могут только служба и администраторы.
 $logsDir = Join-Path $InstallDir "logs"
-New-Item -ItemType Directory -Force -Path $logsDir | Out-Null
+$configDir = Join-Path $InstallDir "config"
+New-Item -ItemType Directory -Force -Path $logsDir, $configDir | Out-Null
 & icacls.exe $InstallDir /grant "${LocalServiceSid}:(OI)(CI)RX" /T /C /Q | Out-Null
 if ($LASTEXITCODE -ne 0) { Fail "Не удалось выдать службе права на папку $InstallDir." }
 & icacls.exe $logsDir /grant "${LocalServiceSid}:(OI)(CI)M" /T /C /Q | Out-Null
 if ($LASTEXITCODE -ne 0) { Fail "Не удалось выдать службе права на папку $logsDir." }
+# Наследование прав отключаем: обычные пользователи компьютера не должны видеть файл подключения.
+& icacls.exe $configDir /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)F" "*S-1-5-32-544:(OI)(CI)F" "${LocalServiceSid}:(OI)(CI)M" /T /C /Q | Out-Null
+if ($LASTEXITCODE -ne 0) { Fail "Не удалось выдать службе права на папку $configDir." }
 
 # Источник для журнала событий Windows: создать его может только администратор, поэтому делает установщик.
 if (-not [System.Diagnostics.EventLog]::SourceExists($EventSource)) {
@@ -222,6 +229,9 @@ if ($publicNets.Count -gt 0) {
 }
 Write-Host ""
 Write-Host "Журнал работы сайта: $logsDir"
-Write-Host "Контент (телефон, адрес, услуги, врачи): $contentFile — правится в Блокноте, перезапуск не нужен."
+Write-Host "Услуги, цены и врачи: $contentFile — правится в Блокноте, перезапуск не нужен."
+Write-Host ""
+Write-Host "Если сайт ещё не подключён к базе данных, в браузере откроется страница подключения:" -ForegroundColor Cyan
+Write-Host "  ${local}nastroika-bd — укажите сервер SQL Server, логин и пароль." -ForegroundColor Cyan
 Start-Process $local
 Read-Host "Нажмите Enter, чтобы закрыть окно"

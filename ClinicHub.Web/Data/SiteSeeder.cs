@@ -12,12 +12,11 @@ public static class SiteSeeder
 {
     public const string SeedAuthor = "seed";
 
-    public static async Task MigrateAndSeedAsync(IServiceProvider services, CancellationToken ct = default)
+    public static async Task MigrateAndSeedAsync(string connectionString, SiteContent content, ILogger logger, CancellationToken ct = default)
     {
-        await using var scope = services.CreateAsyncScope();
-        await using var db = await scope.ServiceProvider.GetRequiredService<IDbContextFactory<SiteDbContext>>().CreateDbContextAsync(ct);
-        var content = scope.ServiceProvider.GetRequiredService<IConfiguration>().GetSection("Site").Get<SiteContent>() ?? new SiteContent();
-        var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(SiteSeeder));
+        var options = new DbContextOptionsBuilder<SiteDbContext>();
+        SiteDbContext.Configure(options, connectionString);
+        await using var db = new SiteDbContext(options.Options);
 
         await db.Database.MigrateAsync(ct);
 
