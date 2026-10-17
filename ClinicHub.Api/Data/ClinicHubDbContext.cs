@@ -27,7 +27,7 @@ public class ClinicHubDbContext : DbContext
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
-        // Все DateTime (и DateTime?) — моменты времени в UTC, колонка timestamp with time zone.
+        // Все DateTime (и DateTime?) — моменты времени в UTC (ADR-0009).
         // Календарные даты (дата рождения и т.п.) ниже переопределены на тип date.
         configurationBuilder.Properties<DateTime>().HaveConversion<UtcDateTimeConverter>();
     }

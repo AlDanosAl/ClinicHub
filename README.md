@@ -4,25 +4,17 @@
 
 | Проект | Что это |
 |---|---|
-| `ClinicHub.Api` | Сервер (ASP.NET Core + PostgreSQL). Хранит пациентов и заявки, раздаёт SMS телефонам. |
+| `ClinicHub.Api` | Сервер (ASP.NET Core + SQL Server; перед продом — PostgreSQL, ADR-0009). Хранит пациентов и заявки, раздаёт SMS телефонам. |
 | `ClinicHub.Admin` | Программа администратора для Windows (заявки, пациенты, телефоны). |
 | `ClinicHub.SmsAgent` | Приложение для Android: подключается к серверу и отправляет SMS с SIM телефона. |
 | `ClinicHub.Core` | Общие классы (DTO и сущности). |
 
 ## 1. Запуск сервера на компьютере
 
-### 1.1. PostgreSQL (один раз)
+### 1.1. База данных
 
-Сервер хранит данные в PostgreSQL ([ADR-0006](docs/decisions/0006-database.md)).
-
-1. Установите PostgreSQL 17 для Windows (установщик EDB с postgresql.org). При установке запомните пароль пользователя `postgres`, порт оставьте 5432.
-2. Создайте пользователя и базу. В PowerShell (путь поправьте под свою версию):
-
-```powershell
-cd "C:\Program Files\PostgreSQL\17\bin"
-.\psql.exe -U postgres -c "CREATE ROLE clinichub LOGIN PASSWORD 'придумайте-пароль';"
-.\psql.exe -U postgres -c "CREATE DATABASE clinichub OWNER clinichub;"
-```
+На этапе разработки сервер работает с SQL Server ([ADR-0009](docs/decisions/0009-sqlserver-for-development.md)): подойдёт LocalDB
+(ставится вместе с Visual Studio), SQL Server Express или Developer. Базу создавать руками не нужно: сервер создаст её сам при первом запуске.
 
 ### 1.2. Секреты (один раз на компьютер)
 
@@ -30,9 +22,11 @@ cd "C:\Program Files\PostgreSQL\17\bin"
 
 ```powershell
 cd <папка репозитория>\ClinicHub.Api
-dotnet user-secrets set "ConnectionStrings:ClinicHub" "Host=localhost;Database=clinichub;Username=clinichub;Password=придумайте-пароль"
+dotnet user-secrets set "ConnectionStrings:ClinicHub" "Server=(localdb)\MSSQLLocalDB;Database=ClinicHub;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=True"
 dotnet user-secrets set "Jwt:Secret" "<случайная строка не короче 32 символов>"
 ```
+
+Для SQL Server Express вместо `(localdb)\MSSQLLocalDB` укажите `.\SQLEXPRESS`.
 
 Все возможные настройки перечислены в `ClinicHub.Api/appsettings.example.json`.
 На сервере клиники вместо user-secrets задаются переменные окружения: `ConnectionStrings__ClinicHub`, `Jwt__Secret`.
@@ -45,7 +39,7 @@ cd <папка репозитория>\ClinicHub.Api
 dotnet run --launch-profile http
 ```
 
-Сервер слушает `http://0.0.0.0:5112`. Таблицы создаются сами при первом запуске (миграции EF).
+Сервер слушает `http://0.0.0.0:5112`. База и таблицы создаются и обновляются сами при запуске (миграции EF).
 
 **Первый вход в Admin.** Пароля по умолчанию нет. В пустой базе сервер создаёт администратора `admin`
 со случайным паролем и один раз пишет его в консоль и в журнал (`logs/clinichub.log`), ищите строку «Создан первый администратор».

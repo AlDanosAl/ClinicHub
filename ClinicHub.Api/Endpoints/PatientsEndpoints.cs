@@ -37,11 +37,11 @@ public static class PatientsEndpoints
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            // В SQL Server поиск был без учёта регистра, в PostgreSQL Contains его учитывает: «иванов» ≠ «Иванов».
-            // ILIKE ищет без учёта регистра; %, _ и \ во вводе экранируем, чтобы они не работали как шаблон.
-            var term = "%" + search.Trim().Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_") + "%";
+            // Без учёта регистра на любой СУБД: в SQL Server Contains и так не учитывает регистр,
+            // а в PostgreSQL учитывает. ToLower переводится в LOWER() и там, и там (ADR-0009: только LINQ).
+            var term = search.Trim().ToLower();
             query = query.Where(p =>
-                EF.Functions.ILike(p.FullName, term) || EF.Functions.ILike(p.Phone, term));
+                p.FullName.ToLower().Contains(term) || p.Phone.Contains(term));
         }
 
         // Фильтр "аудитория прошлой заявки": оставить только тех, кто уже получал конкретную рассылку.

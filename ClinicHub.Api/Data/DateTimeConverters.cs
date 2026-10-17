@@ -3,11 +3,12 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClinicHub.Api.Data;
 
 /// <summary>
-/// Момент времени в БД (PostgreSQL <c>timestamp with time zone</c>). Храним UTC (CLAUDE.md).
-/// Npgsql отказывается записывать в такую колонку DateTime с Kind ≠ Utc, а к нам приходят и Unspecified
-/// (из JSON без «Z»), и Local. Поэтому при записи:
-///   Utc — как есть; Local — переводим в UTC; Unspecified — считаем, что это уже UTC (так было и с SQL Server).
-/// При чтении помечаем значение как Utc.
+/// Момент времени в БД. Храним UTC (CLAUDE.md, ADR-0009).
+/// В код приходят DateTime с разным Kind: Utc, Unspecified (из JSON без «Z») и Local. Без конвертера Local
+/// записался бы в базу как есть, со сдвигом на 3 часа. При записи:
+///   Utc — как есть; Local — переводим в UTC; Unspecified — считаем, что это уже UTC (так было и раньше).
+/// При чтении помечаем значение как Utc, чтобы JSON отдавал время с «Z».
+/// При переходе на PostgreSQL конвертер обязателен: Npgsql отказывается писать в timestamptz DateTime с Kind ≠ Utc.
 /// </summary>
 public sealed class UtcDateTimeConverter() : ValueConverter<DateTime, DateTime>(
     v => ToUtc(v),

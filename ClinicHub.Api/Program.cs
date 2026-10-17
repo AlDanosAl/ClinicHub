@@ -40,15 +40,17 @@ builder.Services.AddSingleton(new IntegrationOptions
     WebhookApiKey = builder.Configuration["Integration:WebhookApiKey"] ?? "",
 });
 
-// ── БД (EF Core, PostgreSQL, ADR-0006) ──────────────────────────────────────
-// Таблицы сервера — в схеме public; схемы site и catalog занимает сайт (ADR-0007).
+// ── БД (EF Core) ────────────────────────────────────────────────────────────
+// Сейчас SQL Server, перед продом — PostgreSQL (ADR-0009). Код запросов пишем переносимо: только LINQ.
+// Схемы site и catalog занимают сайт и каталог (ADR-0007, ADR-0008), таблицы сервера — в схеме по умолчанию.
 var connectionString = builder.Configuration.GetConnectionString("ClinicHub");
 if (string.IsNullOrWhiteSpace(connectionString))
     StartupError.Fail(eventLog,
-        "Не задана строка подключения к PostgreSQL (ConnectionStrings:ClinicHub). " +
-        "На компьютере разработчика: dotnet user-secrets set \"ConnectionStrings:ClinicHub\" \"Host=localhost;Database=clinichub;Username=clinichub;Password=...\". " +
-        "На сервере: переменная окружения ConnectionStrings__ClinicHub.");
-builder.Services.AddDbContext<ClinicHubDbContext>(options => options.UseNpgsql(connectionString ?? ""));
+        "Не задана строка подключения к базе (ConnectionStrings:ClinicHub). " +
+        "На компьютере разработчика: dotnet user-secrets set \"ConnectionStrings:ClinicHub\" " +
+        "\"Server=(localdb)\\MSSQLLocalDB;Database=ClinicHub;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=True\" " +
+        "(или Server=.\\SQLEXPRESS для SQL Server Express). На сервере: переменная окружения ConnectionStrings__ClinicHub.");
+builder.Services.AddDbContext<ClinicHubDbContext>(options => options.UseSqlServer(connectionString ?? ""));
 
 // ── Сервисы ─────────────────────────────────────────────────────────────────
 builder.Services.AddHttpContextAccessor();
