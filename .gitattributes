@@ -61,3 +61,8 @@
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
+
+# Скрипты для Windows: переводы строк CRLF, иначе cmd.exe и PowerShell 5.1 могут читать их неверно.
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+deploy/**/*.txt text eol=crlf

@@ -1,0 +1,24 @@
+﻿@page "/Error"
+@using System.Diagnostics
+
+<Seo Title="Ошибка" Description="Что-то пошло не так." NoIndex="true" />
+
+<section class="container section stack">
+    <h1 class="display display--md">Что-то пошло не так</h1>
+    <p class="muted-strong">Попробуйте обновить страницу через минуту или позвоните нам.</p>
+    @if (!string.IsNullOrEmpty(RequestId))
+    {
+        <p class="muted small">Код ошибки для поддержки: <code>@RequestId</code></p>
+    }
+    <a class="btn btn--primary" href="/">На главную</a>
+</section>
+
+@code {
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private string? RequestId { get; set; }
+
+    protected override void OnInitialized() =>
+        RequestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+}

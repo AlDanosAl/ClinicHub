@@ -1,0 +1,53 @@
+﻿@inherits LayoutComponentBase
+@inject IOptionsSnapshot<SiteContent> Content
+
+@{ var c = Content.Value.Clinic; }
+
+<a class="skip-link" href="#main">Перейти к содержимому</a>
+
+<header class="site-header">
+    <div class="container site-header__row">
+        <a class="logo" href="/" aria-label="@c.Name — на главную">@c.Name.ToUpperInvariant()</a>
+        <nav class="site-nav" aria-label="Разделы сайта">
+            <a href="/#services">Услуги и цены</a>
+            <a href="/#doctors">Врачи</a>
+            <a href="/#results">До и после</a>
+            <a href="/#reviews">Отзывы</a>
+            <a href="/#blog">Статьи</a>
+            <a href="/#contacts">Контакты</a>
+        </nav>
+        <div class="site-header__actions">
+            <PhoneLink Phone="@c.Phone" CssClass="site-header__phone" />
+            <a class="btn btn--primary" href="/zapis">Записаться</a>
+        </div>
+    </div>
+</header>
+
+<main id="main">
+    @Body
+</main>
+
+<footer id="contacts" class="site-footer">
+    <div class="container site-footer__inner">
+        <div class="site-footer__cols">
+            <div class="site-footer__col">
+                <span class="logo logo--footer">@c.Name.ToUpperInvariant()</span>
+                <span class="muted-on-dark">@c.LegalName, лицензия @c.License</span>
+            </div>
+            <address class="site-footer__col">
+                <span>@c.Address</span>
+                <span>м. @c.Metro</span>
+                <span>@c.Hours</span>
+            </address>
+            <div class="site-footer__col">
+                <PhoneLink Phone="@c.Phone" CssClass="tabular" />
+                <a href="/politika">Политика обработки персональных данных</a>
+                <a href="/pravila">Правила оказания платных услуг</a>
+            </div>
+        </div>
+        <p class="site-footer__disclaimer">
+            Имеются противопоказания. Необходима консультация специалиста.
+            Информация на сайте не является публичной офертой.
+        </p>
+    </div>
+</footer>

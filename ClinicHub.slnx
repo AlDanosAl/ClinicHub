@@ -3,4 +3,5 @@
   <Project Path="ClinicHub.Api/ClinicHub.Api.csproj" />
   <Project Path="ClinicHub.Core/ClinicHub.Core.csproj" />
   <Project Path="ClinicHub.SmsAgent/ClinicHub.SmsAgent.csproj" />
+  <Project Path="ClinicHub.Web/ClinicHub.Web.csproj" />
 </Solution>
