@@ -13,25 +13,38 @@ public sealed record RenderedBlock(int Id, BlockType Type, object Settings);
 /// Чтение сайта из БД для публичных страниц. Живёт в пределах запроса: настройки читаются один раз,
 /// даже если их просят шапка, подвал и SEO одной страницы.
 /// Шапка и страница при отрисовке ждут данные одновременно, а один DbContext параллельных запросов не допускает,
-/// поэтому у каждого чтения свой контекст из фабрики.
+/// поэтому у каждого чтения свой контекст из фабрики. Между запросами данные держит <see cref="SiteCache"/>.
 /// </summary>
-public sealed class SiteStore(IDbContextFactory<SiteDbContext> dbFactory, ILogger<SiteStore> logger)
+public sealed class SiteStore(IDbContextFactory<SiteDbContext> dbFactory, SiteCache cache, ILogger<SiteStore> logger)
 {
     private Task<ClinicInfo>? _clinic;
 
-    public Task<ClinicInfo> GetClinicAsync() => _clinic ??= LoadClinicAsync();
+    public Task<ClinicInfo> GetClinicAsync() => _clinic ??= GetClinicCachedAsync();
 
-    private async Task<ClinicInfo> LoadClinicAsync()
+    private async Task<ClinicInfo> GetClinicCachedAsync() =>
+        await cache.GetAsync<ClinicInfo>("settings", LoadClinicAsync) ?? new ClinicInfo();
+
+    /// <summary>Опубликованная версия страницы или null, если страницы нет или она снята с публикации.</summary>
+    public Task<PublishedPage?> GetPublishedAsync(string path)
+    {
+        path = NormalizePath(path);
+        // Без токена отмены запроса: загрузка может продолжиться в фоне и обновить кэш после ответа посетителю.
+        return cache.GetAsync("page:" + path, () => LoadPublishedAsync(path, CancellationToken.None));
+    }
+
+    /// <summary>Адреса опубликованных страниц для sitemap.xml.</summary>
+    public async Task<List<string>> GetPublishedPathsAsync() =>
+        await cache.GetAsync<List<string>>("paths", () => LoadPublishedPathsAsync(CancellationToken.None)) ?? [];
+
+    private async Task<ClinicInfo?> LoadClinicAsync()
     {
         await using var db = await dbFactory.CreateDbContextAsync();
         var s = await db.Settings.AsNoTracking().OrderBy(x => x.Id).FirstOrDefaultAsync();
         return s is null ? new ClinicInfo() : ToClinicInfo(s);
     }
 
-    /// <summary>Опубликованная версия страницы или null, если страницы нет или она снята с публикации.</summary>
-    public async Task<PublishedPage?> GetPublishedAsync(string path, CancellationToken ct = default)
+    private async Task<PublishedPage?> LoadPublishedAsync(string path, CancellationToken ct)
     {
-        path = NormalizePath(path);
         await using var db = await dbFactory.CreateDbContextAsync(ct);
         var page = await db.Pages.AsNoTracking()
             .Where(p => p.Path == path && p.IsPublished)
@@ -70,8 +83,7 @@ public sealed class SiteStore(IDbContextFactory<SiteDbContext> dbFactory, ILogge
         return new PublishedPage(page.Path, page.Title, page.Description, blocks);
     }
 
-    /// <summary>Адреса опубликованных страниц для sitemap.xml.</summary>
-    public async Task<List<string>> GetPublishedPathsAsync(CancellationToken ct = default)
+    private async Task<List<string>?> LoadPublishedPathsAsync(CancellationToken ct)
     {
         await using var db = await dbFactory.CreateDbContextAsync(ct);
         return await db.Pages.AsNoTracking()

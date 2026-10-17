@@ -21,10 +21,10 @@ public static class SeoEndpoints
             return Results.Text(sb.ToString(), "text/plain", Encoding.UTF8);
         });
 
-        app.MapGet("/sitemap.xml", async (HttpRequest req, SiteStore store, CancellationToken ct) =>
+        app.MapGet("/sitemap.xml", async (HttpRequest req, SiteStore store) =>
         {
             var baseUrl = SiteUrls.BaseUrl(await store.GetClinicAsync(), req);
-            var paths = (await store.GetPublishedPathsAsync(ct)).Concat(CodePaths);
+            var paths = (await store.GetPublishedPathsAsync()).Concat(CodePaths);
             XNamespace ns = "http://www.sitemaps.org/schemas/sitemap/0.9";
             var doc = new XDocument(
                 new XDeclaration("1.0", "utf-8", null),

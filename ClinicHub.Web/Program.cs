@@ -43,6 +43,7 @@ if (OperatingSystem.IsWindows())
 builder.Services.AddSingleton<DbConnectionStore>();
 builder.Services.AddSingleton<IDbContextFactory<SiteDbContext>, SiteDbContextFactory>();
 builder.Services.AddHostedService<DbConnectionMonitor>();
+builder.Services.AddSingleton<SiteCache>();
 builder.Services.AddScoped<SiteStore>();
 
 // site-content.json — только начальное наполнение пустой БД: страницы, настройки и каталог. Дальше всё правится в БД.
@@ -80,24 +81,40 @@ app.Use(async (context, next) =>
         || path.Equals("/robots.txt") || path.Equals("/sitemap.xml");
     if (store.State == DbState.Ready || !isPage || path.StartsWithSegments(DbConnectionStore.SetupPath))
     {
-        await next();
+        try
+        {
+            await next();
+        }
+        catch (Exception ex) when (SiteCache.IsDatabaseUnavailable(ex) && !context.Response.HasStarted)
+        {
+            // База не ответила, а в кэше этой страницы ещё нет. Вместо ошибки 500 — понятная страница с автоповтором.
+            app.Logger.LogWarning("Нет связи с базой при запросе {Path}: {Error}", path, ex.Message);
+            await WriteWaitPage(context, 15, "Нет связи с базой данных", "Сайт не может получить данные. Попробуем снова через 15 секунд.");
+        }
         return;
     }
     if (store.State == DbState.Connecting)
     {
-        // Сразу после запуска: подключение к базе идёт в фоне. Страница сама обновится через 5 секунд (без JavaScript).
-        context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
-        context.Response.Headers.RetryAfter = "5";
-        context.Response.ContentType = "text/html; charset=utf-8";
-        await context.Response.WriteAsync(
-            "<!DOCTYPE html><html lang=\"ru\"><head><meta charset=\"utf-8\"><meta http-equiv=\"refresh\" content=\"5\">" +
-            "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Сайт запускается</title></head>" +
-            "<body style=\"font-family:sans-serif;max-width:560px;margin:15vh auto;padding:0 16px;color:#333\">" +
-            "<h1 style=\"font-weight:500\">Сайт запускается</h1><p>Подключаемся к базе данных. Страница обновится сама.</p></body></html>");
+        // Сразу после запуска: подключение к базе идёт в фоне.
+        await WriteWaitPage(context, 5, "Сайт запускается", "Подключаемся к базе данных. Страница обновится сама.");
         return;
     }
     context.Response.Redirect(DbConnectionStore.SetupPath);
 });
+
+// Простая страница 503 без БД и без JavaScript: обновится сама через seconds секунд.
+static Task WriteWaitPage(HttpContext context, int seconds, string title, string text)
+{
+    context.Response.Clear();
+    context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+    context.Response.Headers.RetryAfter = seconds.ToString();
+    context.Response.ContentType = "text/html; charset=utf-8";
+    return context.Response.WriteAsync(
+        $"<!DOCTYPE html><html lang=\"ru\"><head><meta charset=\"utf-8\"><meta http-equiv=\"refresh\" content=\"{seconds}\">" +
+        $"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>{title}</title></head>" +
+        "<body style=\"font-family:sans-serif;max-width:560px;margin:15vh auto;padding:0 16px;color:#333\">" +
+        $"<h1 style=\"font-weight:500\">{title}</h1><p>{text}</p></body></html>");
+}
 
 app.MapStaticAssets();
 app.MapSeoEndpoints();
