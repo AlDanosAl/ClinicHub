@@ -18,6 +18,11 @@ public sealed class SiteDbContext(DbContextOptions<SiteDbContext> options) : DbC
     public DbSet<Block> Blocks => Set<Block>();
     public DbSet<SiteSettings> Settings => Set<SiteSettings>();
 
+    // Временный каталог (CatalogEntities.cs).
+    public DbSet<CatalogService> CatalogServices => Set<CatalogService>();
+    public DbSet<CatalogDoctor> CatalogDoctors => Set<CatalogDoctor>();
+    public DbSet<CatalogDoctorService> CatalogDoctorServices => Set<CatalogDoctorService>();
+
     /// <summary>Общие параметры подключения: и для сайта, и для dotnet ef.</summary>
     public static void Configure(DbContextOptionsBuilder options, string connectionString) =>
         options.UseSqlServer(connectionString, sql => sql.MigrationsHistoryTable("__EFMigrationsHistory", Schema));
@@ -80,6 +85,33 @@ public sealed class SiteDbContext(DbContextOptions<SiteDbContext> options) : DbC
             e.Property(x => x.ProDoktorovRating).HasMaxLength(20);
             e.Property(x => x.YandexMapsUrl).HasMaxLength(500);
             e.Property(x => x.YandexMapsRating).HasMaxLength(20);
+        });
+
+        b.Entity<CatalogService>(e =>
+        {
+            e.ToTable("CatalogServices");
+            e.Property(x => x.Key).HasMaxLength(50);
+            e.Property(x => x.Name).HasMaxLength(200);
+            e.Property(x => x.Text).HasMaxLength(1000);
+            e.Property(x => x.Price).HasMaxLength(100);
+            e.HasIndex(x => x.Key).IsUnique();
+        });
+
+        b.Entity<CatalogDoctor>(e =>
+        {
+            e.ToTable("CatalogDoctors");
+            e.Property(x => x.Key).HasMaxLength(50);
+            e.Property(x => x.Name).HasMaxLength(200);
+            e.Property(x => x.Role).HasMaxLength(300);
+            e.HasIndex(x => x.Key).IsUnique();
+        });
+
+        b.Entity<CatalogDoctorService>(e =>
+        {
+            e.ToTable("CatalogDoctorServices");
+            e.HasKey(x => new { x.DoctorId, x.ServiceId });
+            e.HasOne(x => x.Doctor).WithMany(x => x.Services).HasForeignKey(x => x.DoctorId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Service).WithMany().HasForeignKey(x => x.ServiceId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

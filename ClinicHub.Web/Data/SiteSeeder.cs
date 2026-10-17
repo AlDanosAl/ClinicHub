@@ -31,7 +31,42 @@ public static class SiteSeeder
             db.Pages.Add(HomePage(content, now));
             logger.LogInformation("Главная страница создана в БД из site-content.json");
         }
+        // Каталог проверяем отдельно: в базах, созданных до появления каталога в БД, страницы уже есть, а каталога нет.
+        if (!await db.CatalogServices.AnyAsync(ct) && !await db.CatalogDoctors.AnyAsync(ct))
+        {
+            SeedCatalog(db, content, now);
+            logger.LogInformation("Каталог услуг и врачей перенесён из site-content.json в БД");
+        }
         await db.SaveChangesAsync(ct);
+    }
+
+    private static void SeedCatalog(SiteDbContext db, SiteContent content, DateTime now)
+    {
+        var services = content.Services.Select((s, i) => new CatalogService
+        {
+            Key = s.Id,
+            Name = s.Name,
+            Text = s.Text,
+            Price = s.Price,
+            DurationMinutes = s.DurationMinutes,
+            Order = (i + 1) * 10,
+            UpdatedAt = now,
+        }).ToList();
+        db.CatalogServices.AddRange(services);
+
+        db.CatalogDoctors.AddRange(content.Doctors.Select((d, i) => new CatalogDoctor
+        {
+            Key = d.Id,
+            Name = d.Name,
+            Role = d.Role,
+            Order = (i + 1) * 10,
+            UpdatedAt = now,
+            Services = d.ServiceIds
+                .Select(id => services.FirstOrDefault(s => s.Key == id))
+                .OfType<CatalogService>()
+                .Select(s => new CatalogDoctorService { Service = s })
+                .ToList(),
+        }));
     }
 
     private static SiteSettings ToSettings(ClinicInfo c, DateTime now) => new()

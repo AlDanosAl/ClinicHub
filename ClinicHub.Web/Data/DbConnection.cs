@@ -191,6 +191,13 @@ public sealed class DbConnectionStore(
         {
             return Explain(sql);
         }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // Не сеть и не права: например, сборка сайта не совпадает со схемой базы. Сайт не падает
+            // (иначе служба уйдёт в цикл перезапусков), а показывает причину на странице настройки.
+            logger.LogError(ex, "Не удалось подготовить базу сайта");
+            return "Не удалось подготовить базу: " + ex.Message;
+        }
         finally
         {
             _gate.Release();

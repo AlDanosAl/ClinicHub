@@ -1,4 +1,5 @@
-using Microsoft.Extensions.Options;
+using ClinicHub.Web.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClinicHub.Web.Site;
 
@@ -13,14 +14,75 @@ public interface ISiteCatalog
 }
 
 /// <summary>
-/// Временный каталог из site-content.json (разделы Services и Doctors), перечитывается на лету.
-/// Каталог принадлежит серверу (модуль Catalog в ClinicHub.Api, ADR-0008 §2, Issue #13).
-/// Когда там появится API, здесь будет его клиент, а страницы менять не придётся.
+/// Временный каталог из таблиц site.Catalog* (см. Data/CatalogEntities.cs). Каталог принадлежит серверу
+/// (модуль Catalog в ClinicHub.Api, ADR-0008 §2, Issue #13); когда там появится API, здесь будет его клиент.
+/// Каталог маленький и нужен на каждой странице, поэтому держим его в памяти и перечитываем раз в 30 секунд:
+/// цена, исправленная в базе, появляется на всех сайтах, подключённых к ней, не позже чем через полминуты.
 /// </summary>
-public sealed class ContentFileCatalog(IOptionsMonitor<SiteContent> content) : ISiteCatalog
+public sealed class DbSiteCatalog(IDbContextFactory<SiteDbContext> dbFactory, DbConnectionStore store, TimeProvider clock,
+    ILogger<DbSiteCatalog> logger) : ISiteCatalog
 {
-    public IReadOnlyList<ServiceItem> Services => content.CurrentValue.Services;
-    public IReadOnlyList<DoctorItem> Doctors => content.CurrentValue.Doctors;
+    private static readonly TimeSpan MaxAge = TimeSpan.FromSeconds(30);
+
+    private sealed record Snapshot(IReadOnlyList<ServiceItem> Services, IReadOnlyList<DoctorItem> Doctors, DateTimeOffset LoadedAt);
+
+    private static readonly Snapshot Empty = new([], [], DateTimeOffset.MinValue);
+
+    private volatile Snapshot _snapshot = Empty;
+    private int _refreshing;
+
+    public IReadOnlyList<ServiceItem> Services => Current().Services;
+    public IReadOnlyList<DoctorItem> Doctors => Current().Doctors;
+
+    private Snapshot Current()
+    {
+        var s = _snapshot;
+        if (store.State != DbState.Ready || clock.GetUtcNow() - s.LoadedAt < MaxAge)
+            return s;
+
+        if (ReferenceEquals(s, Empty))
+        {
+            // Первое обращение после запуска: без каталога страница пустая, поэтому ждём загрузку.
+            Load();
+            return _snapshot;
+        }
+
+        // Данные устарели: отдаём прежние, а свежие подгружаем в фоне одним запросом.
+        if (Interlocked.Exchange(ref _refreshing, 1) == 0)
+            _ = Task.Run(() => { try { Load(); } finally { Volatile.Write(ref _refreshing, 0); } });
+        return s;
+    }
+
+    private void Load()
+    {
+        try
+        {
+            using var db = dbFactory.CreateDbContext();
+            var services = db.CatalogServices.AsNoTracking()
+                .Where(x => x.IsVisible)
+                .OrderBy(x => x.Order).ThenBy(x => x.Id)
+                .Select(x => new ServiceItem { Id = x.Key, Name = x.Name, Text = x.Text, Price = x.Price, DurationMinutes = x.DurationMinutes })
+                .ToList();
+            var doctors = db.CatalogDoctors.AsNoTracking()
+                .Where(x => x.IsVisible)
+                .OrderBy(x => x.Order).ThenBy(x => x.Id)
+                .Select(x => new DoctorItem
+                {
+                    Id = x.Key,
+                    Name = x.Name,
+                    Role = x.Role,
+                    ServiceIds = x.Services.Select(ds => ds.Service.Key).ToList(),
+                })
+                .ToList();
+            _snapshot = new Snapshot(services, doctors, clock.GetUtcNow());
+        }
+        catch (Exception ex) when (ex is Microsoft.Data.SqlClient.SqlException or InvalidOperationException)
+        {
+            // База на время недоступна — показываем то, что уже загружено, и пробуем снова через 30 секунд.
+            logger.LogWarning(ex, "Не удалось обновить каталог из БД, показываем загруженный ранее");
+            _snapshot = _snapshot with { LoadedAt = clock.GetUtcNow() };
+        }
+    }
 }
 
 public static class SiteCatalogExtensions

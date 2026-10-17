@@ -45,11 +45,10 @@ builder.Services.AddSingleton<IDbContextFactory<SiteDbContext>, SiteDbContextFac
 builder.Services.AddHostedService<DbConnectionMonitor>();
 builder.Services.AddScoped<SiteStore>();
 
-// site-content.json: каталог услуг и врачей, пока его нет в ClinicHub.Api (Issue #13), и начальное наполнение пустой БД.
-// Каталог перечитывается на лету; остальное после первого запуска правится уже в БД.
-builder.Configuration.AddJsonFile("site-content.json", optional: false, reloadOnChange: true);
-builder.Services.Configure<SiteContent>(builder.Configuration.GetSection("Site"));
-builder.Services.AddSingleton<ISiteCatalog, ContentFileCatalog>();
+// site-content.json — только начальное наполнение пустой БД: страницы, настройки и каталог. Дальше всё правится в БД.
+builder.Configuration.AddJsonFile("site-content.json", optional: false, reloadOnChange: false);
+// Каталог услуг и врачей — временно в схеме site, пока его нет в ClinicHub.Api (Issue #13).
+builder.Services.AddSingleton<ISiteCatalog, DbSiteCatalog>();
 
 // Кириллицу в HTML отдаём как есть, а не &#x...; — страницы короче и читаемее. Опасные символы (<, >, &, ") по-прежнему экранируются.
 builder.Services.AddWebEncoders(o => o.TextEncoderSettings = new TextEncoderSettings(UnicodeRanges.All));

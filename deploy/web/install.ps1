@@ -229,7 +229,6 @@ if ($publicNets.Count -gt 0) {
 }
 Write-Host ""
 Write-Host "Журнал работы сайта: $logsDir"
-Write-Host "Услуги, цены и врачи: $contentFile — правится в Блокноте, перезапуск не нужен."
 Write-Host ""
 Write-Host "Если сайт ещё не подключён к базе данных, в браузере откроется страница подключения:" -ForegroundColor Cyan
 Write-Host "  ${local}nastroika-bd — укажите сервер SQL Server, логин и пароль." -ForegroundColor Cyan

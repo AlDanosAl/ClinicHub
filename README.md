@@ -81,10 +81,11 @@ dotnet run --launch-profile http
 
 - Страницы собираются из блоков (ADR-0007): `site.Pages` → `site.PageVersions` → `site.Blocks`, настройки блока — JSON.
   Контакты и ссылки клиники — `site.Settings`. Типы блоков: `ClinicHub.Web/Blocks/BlockTypes.cs`. Пока нет админки (PLAN 4.7–4.8),
-  правки — прямо в БД. Чтобы заново наполнить базу из `site-content.json`, удалите строки из `site.Pages` и `site.Settings`
-  и перезапустите сайт.
-- Услуги с ценами и врачи пока берутся из `ClinicHub.Web/site-content.json` (разделы `Services`, `Doctors`) и перечитываются на лету.
-  Каталог переедет в `ClinicHub.Api` (Issue #13), тогда сайт будет читать его оттуда. Значения в `[КВАДРАТНЫХ СКОБКАХ]` — заглушки.
+  правки — прямо в БД. Чтобы заново наполнить базу из `site-content.json`, удалите строки из `site.Pages`, `site.Settings`,
+  `site.CatalogServices`, `site.CatalogDoctors` и перезапустите сайт.
+- Услуги с ценами и врачи — **временно** в `site.CatalogServices`, `site.CatalogDoctors`, `site.CatalogDoctorServices`
+  (у врача без строк в `CatalogDoctorServices` — все услуги). Сайт перечитывает каталог раз в 30 секунд. По ADR-0008 каталог
+  переедет в `ClinicHub.Api` (Issue #13), тогда эти таблицы уйдут. Значения в `[КВАДРАТНЫХ СКОБКАХ]` — заглушки.
 - Новая миграция схемы сайта: `dotnet ef migrations add <Имя> --project ClinicHub.Web --output-dir Data/Migrations`.
 - Источник свободного времени — интерфейс `IBookingSource`. Сейчас `DemoBookingSource`, после выбора МИС будет её адаптер.
 - Публичные страницы работают без JavaScript (static SSR), поэтому их нормально индексируют поисковики.
