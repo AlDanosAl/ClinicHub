@@ -139,6 +139,10 @@ public sealed class DbConnectionStore(
             return "Неверные данные подключения: " + ex.Message;
         }
 
+        // Повторная отправка того же (двойной клик, «Обновить» после POST): подключение уже сохранено и работает.
+        if (cs == ConnectionString && State == DbState.Ready)
+            return null;
+
         var error = await PrepareDatabaseAsync(cs, ct);
         if (error is not null)
             return error;
