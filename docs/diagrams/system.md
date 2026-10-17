@@ -28,7 +28,7 @@ flowchart TB
       INT[Integrations<br/>МИС, Dikidi, Sheets]
       Q[Очередь SMS<br/>лимиты SIM]
       CONS[Patients + Consents]
-      DB[(PostgreSQL)]
+      DB[(SQL Server → PostgreSQL к проду)]
       BK[Резервные копии]
     end
   end
