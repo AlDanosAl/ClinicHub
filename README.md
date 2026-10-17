@@ -63,16 +63,26 @@ C:\Users\xcx7276\source\repos\ClinicHub.SmsAgent\bin\Release\net10.0-android\pub
 
 ## 6. Сайт (`ClinicHub.Web`)
 
+Сайту нужен SQL Server (ADR-0009): Express, Developer или LocalDB. База общая с сервером — `ClinicHub`, у сайта своя схема `site`.
+Строка подключения в git не хранится, один раз задайте её в user-secrets:
+
 ```powershell
 cd ClinicHub.Web
+dotnet user-secrets set "ConnectionStrings:ClinicHub" "Server=.\SQLEXPRESS;Database=ClinicHub;Trusted_Connection=True;TrustServerCertificate=True"
 dotnet run --launch-profile http
 ```
 
-Сайт откроется на `http://localhost:5242`. Он пока не связан с сервером: онлайн-запись работает в демо-режиме
+Сайт откроется на `http://localhost:5242`. При запуске он сам применяет миграции схемы `site`, а пустую базу заполняет из
+`site-content.json`, поэтому выглядит так же, как до переноса в БД. Онлайн-запись пока работает в демо-режиме
 (выдуманное расписание, заявка никуда не уходит, на странице висит предупреждение).
 
-- Тексты, услуги, врачи, контакты лежат в `ClinicHub.Web/site-content.json`. Значения в `[КВАДРАТНЫХ СКОБКАХ]` — заглушки.
-  Файл перечитывается на лету, перезапуск не нужен.
+- Страницы собираются из блоков (ADR-0007): `site.Pages` → `site.PageVersions` → `site.Blocks`, настройки блока — JSON.
+  Контакты и ссылки клиники — `site.Settings`. Типы блоков: `ClinicHub.Web/Blocks/BlockTypes.cs`. Пока нет админки (PLAN 4.7–4.8),
+  правки — прямо в БД. Чтобы заново наполнить базу из `site-content.json`, удалите строки из `site.Pages` и `site.Settings`
+  и перезапустите сайт.
+- Услуги с ценами и врачи пока берутся из `ClinicHub.Web/site-content.json` (разделы `Services`, `Doctors`) и перечитываются на лету.
+  Каталог переедет в `ClinicHub.Api` (Issue #13), тогда сайт будет читать его оттуда. Значения в `[КВАДРАТНЫХ СКОБКАХ]` — заглушки.
+- Новая миграция схемы сайта: `dotnet ef migrations add <Имя> --project ClinicHub.Web --output-dir Data/Migrations`.
 - Источник свободного времени — интерфейс `IBookingSource`. Сейчас `DemoBookingSource`, после выбора МИС будет её адаптер.
 - Публичные страницы работают без JavaScript (static SSR), поэтому их нормально индексируют поисковики.
 

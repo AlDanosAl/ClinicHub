@@ -18,6 +18,8 @@
 | Ветка | Кто | Меняет схему БД? | Суть |
 |---|---|---|---|
 | feature/api-postgres | AlDanosAl | **да** | PLAN 1.1: секреты, пароль админа, UTC. **Переделать под SQL Server** (ADR-0009, Issue #18). Пока не принята, миграции сервера никто другой не трогает |
+| feature/deploy-web-service | Свят | нет | Установщик сайта по замечаниям Issue #8: служба Windows, журналы, брандмауэр |
+| feature/web-site-db | Свят | **да, только схема `site`** | PLAN 4.6: `SiteDbContext`, страницы из блоков, перенос `site-content.json` в БД. Ветка от `feature/deploy-web-service` |
 
 ---
 

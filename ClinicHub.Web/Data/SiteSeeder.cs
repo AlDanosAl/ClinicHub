@@ -1,0 +1,104 @@
+using ClinicHub.Web.Blocks;
+using ClinicHub.Web.Site;
+using Microsoft.EntityFrameworkCore;
+
+namespace ClinicHub.Web.Data;
+
+/// <summary>
+/// Миграции и начальное наполнение БД сайта. Пустая база заполняется из site-content.json (ADR-0007, «Последствия»),
+/// чтобы сайт выглядел так же, как до переноса в БД. Заполненную базу не трогаем: правки делаются в админке.
+/// </summary>
+public static class SiteSeeder
+{
+    public const string SeedAuthor = "seed";
+
+    public static async Task MigrateAndSeedAsync(IServiceProvider services, CancellationToken ct = default)
+    {
+        await using var scope = services.CreateAsyncScope();
+        await using var db = await scope.ServiceProvider.GetRequiredService<IDbContextFactory<SiteDbContext>>().CreateDbContextAsync(ct);
+        var content = scope.ServiceProvider.GetRequiredService<IConfiguration>().GetSection("Site").Get<SiteContent>() ?? new SiteContent();
+        var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(SiteSeeder));
+
+        await db.Database.MigrateAsync(ct);
+
+        var now = DateTime.UtcNow;
+        if (!await db.Settings.AnyAsync(ct))
+        {
+            db.Settings.Add(ToSettings(content.Clinic, now));
+            logger.LogInformation("Настройки сайта перенесены из site-content.json в БД");
+        }
+        if (!await db.Pages.AnyAsync(ct))
+        {
+            db.Pages.Add(HomePage(content, now));
+            logger.LogInformation("Главная страница создана в БД из site-content.json");
+        }
+        await db.SaveChangesAsync(ct);
+    }
+
+    private static SiteSettings ToSettings(ClinicInfo c, DateTime now) => new()
+    {
+        Name = c.Name,
+        Tagline = c.Tagline,
+        LegalName = c.LegalName,
+        License = c.License,
+        City = c.City,
+        Address = c.Address,
+        Metro = c.Metro,
+        Hours = c.Hours,
+        Phone = c.Phone,
+        BaseUrl = c.BaseUrl,
+        TelegramUrl = c.TelegramUrl,
+        MaxUrl = c.MaxUrl,
+        VkUrl = c.VkUrl,
+        ProDoktorovUrl = c.ProDoktorov?.Url ?? "",
+        ProDoktorovRating = c.ProDoktorov?.Rating ?? "",
+        YandexMapsUrl = c.YandexMaps?.Url ?? "",
+        YandexMapsRating = c.YandexMaps?.Rating ?? "",
+        UpdatedAt = now,
+    };
+
+    /// <summary>Главная в том виде, в каком она была свёрстана в Home.razor до переноса в БД.</summary>
+    private static Page HomePage(SiteContent content, DateTime now)
+    {
+        var c = content.Clinic;
+        object[] blocks =
+        [
+            new HeroBlock(),
+            new QuickBookingBlock(),
+            new ServicesBlock(),
+            new DoctorsBlock(),
+            new ResultsBlock { Items = content.Results },
+            new ReviewsBlock { Quote = content.Review },
+            new ChannelsBlock(),
+            new PostsBlock { Items = content.Posts },
+        ];
+
+        return new Page
+        {
+            Path = "/",
+            Title = $"{c.Name} — {c.Tagline.ToLowerInvariant()} в {CityPrepositional(c.City)}",
+            Description = $"{c.Tagline} {c.Name}: консультация врача-косметолога, уход за кожей, аппаратные и инъекционные методики. Онлайн-запись, напоминания в мессенджерах и по SMS.",
+            IsPublished = true,
+            CreatedAt = now,
+            Versions =
+            [
+                new PageVersion
+                {
+                    Status = PageVersionStatus.Published,
+                    CreatedAt = now,
+                    PublishedAt = now,
+                    PublishedBy = SeedAuthor,
+                    Blocks = blocks.Select((settings, i) => new Block
+                    {
+                        Type = BlockTypes.KeyOf(settings.GetType()),
+                        Order = (i + 1) * 10,
+                        Data = BlockTypes.Serialize(settings),
+                    }).ToList(),
+                },
+            ],
+        };
+    }
+
+    private static string CityPrepositional(string city) =>
+        city == "Санкт-Петербург" ? "Санкт-Петербурге" : city;
+}

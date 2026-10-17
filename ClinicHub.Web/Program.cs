@@ -2,6 +2,7 @@ using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using ClinicHub.Web.Booking;
 using ClinicHub.Web.Components;
+using ClinicHub.Web.Data;
 using ClinicHub.Web.Site;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging.EventLog;
@@ -24,9 +25,24 @@ if (logDirectory is not null)
     builder.Logging.AddProvider(provider);
 }
 
-// Контент сайта (клиника, услуги, врачи) — отдельный файл, правится без пересборки.
+// БД сайта: страницы из блоков и настройки, схема site в общей базе ClinicHub (ADR-0007).
+// Строка подключения — user-secrets или переменная окружения ConnectionStrings__ClinicHub, в git её нет (CLAUDE.md).
+var connectionString = builder.Configuration.GetConnectionString("ClinicHub");
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException(
+        "Не задана строка подключения ConnectionStrings:ClinicHub. При разработке: " +
+        "dotnet user-secrets set \"ConnectionStrings:ClinicHub\" \"Server=...;Database=ClinicHub;Trusted_Connection=True;TrustServerCertificate=True\" " +
+        "(в папке ClinicHub.Web). На сервере — переменная окружения ConnectionStrings__ClinicHub.");
+}
+builder.Services.AddDbContextFactory<SiteDbContext>(o => SiteDbContext.Configure(o, connectionString));
+builder.Services.AddScoped<SiteStore>();
+
+// site-content.json: каталог услуг и врачей, пока его нет в ClinicHub.Api (Issue #13), и начальное наполнение пустой БД.
+// Каталог перечитывается на лету; остальное после первого запуска правится уже в БД.
 builder.Configuration.AddJsonFile("site-content.json", optional: false, reloadOnChange: true);
 builder.Services.Configure<SiteContent>(builder.Configuration.GetSection("Site"));
+builder.Services.AddSingleton<ISiteCatalog, ContentFileCatalog>();
 
 // Кириллицу в HTML отдаём как есть, а не &#x...; — страницы короче и читаемее. Опасные символы (<, >, &, ") по-прежнему экранируются.
 builder.Services.AddWebEncoders(o => o.TextEncoderSettings = new TextEncoderSettings(UnicodeRanges.All));
@@ -40,6 +56,8 @@ builder.Services.AddRazorComponents();
 
 var app = builder.Build();
 
+await SiteSeeder.MigrateAndSeedAsync(app.Services);
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
@@ -51,4 +69,4 @@ app.MapStaticAssets();
 app.MapSeoEndpoints();
 app.MapRazorComponents<App>();
 
-app.Run();
+await app.RunAsync();
