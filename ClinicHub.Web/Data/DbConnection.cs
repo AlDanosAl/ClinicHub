@@ -58,6 +58,8 @@ public enum DbState
 {
     /// <summary>Подключение не задано: сайт показывает только страницу настройки.</summary>
     NotConfigured,
+    /// <summary>Подключение задано, сайт подключается к базе (после запуска службы, в фоне). Посетители видят «подождите».</summary>
+    Connecting,
     /// <summary>Подключение задано, но база недоступна. Сайт пробует снова каждые 30 секунд.</summary>
     Failed,
     Ready,
@@ -94,7 +96,10 @@ public sealed class DbConnectionStore(
     public static string ConfigDirectory(IConfiguration config, IHostEnvironment env) =>
         Path.Combine(env.ContentRootPath, config["Database:ConfigDirectory"] ?? "config");
 
-    /// <summary>При запуске: прочитать подключение и подготовить базу. Ошибки не роняют сайт.</summary>
+    /// <summary>
+    /// После запуска, в фоне (<see cref="DbConnectionMonitor"/>): прочитать подключение и подготовить базу. Ошибки не роняют сайт.
+    /// Не до старта сайта: служба Windows обязана ответить системе за 30 секунд, а база по интернету может отвечать дольше.
+    /// </summary>
     public async Task InitializeAsync(CancellationToken ct = default)
     {
         var fromConfig = config.GetConnectionString("ClinicHub");
@@ -113,7 +118,11 @@ public sealed class DbConnectionStore(
             logger.LogWarning("Подключение к базе не задано. Откройте на этом компьютере http://localhost:<порт>{Path}", SetupPath);
             return;
         }
+        State = DbState.Connecting;
+        logger.LogInformation("Подключаюсь к базе: сервер {Server}", new SqlConnectionStringBuilder(ConnectionString).DataSource);
         await ActivateAsync(ConnectionString, ct);
+        if (State == DbState.Ready)
+            logger.LogInformation("База сайта готова");
     }
 
     /// <summary>Повторная попытка, если база была недоступна (например, SQL Server запустился позже сайта).</summary>
@@ -219,6 +228,13 @@ public sealed class DbConnectionStore(
             LastError = "Сохранённое подключение не удалось расшифровать. Введите данные заново.";
             return null;
         }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Например, у службы нет прав на папку config. Сайт не падает, а показывает причину на странице настройки.
+            logger.LogError(ex, "Не удалось прочитать {File}", SettingsFile);
+            LastError = $"Не удалось прочитать сохранённое подключение ({ex.Message}). Проверьте права службы на папку config или введите данные заново.";
+            return null;
+        }
     }
 
     /// <summary>Понятная причина по коду ошибки SQL Server; исходный текст — в скобках, для разработчика.</summary>
@@ -259,11 +275,15 @@ public sealed class SiteDbContextFactory(DbConnectionStore store) : IDbContextFa
     }
 }
 
-/// <summary>Если база была недоступна при запуске, пробует подключиться снова, пока не получится.</summary>
+/// <summary>Подключается к базе после запуска сайта, а если база недоступна — пробует снова, пока не получится.</summary>
 public sealed class DbConnectionMonitor(DbConnectionStore store) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        // Отпускаем запуск сайта сразу: всё дальнейшее — в фоне.
+        await Task.Yield();
+        await store.InitializeAsync(stoppingToken);
+
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(30));
         while (await timer.WaitForNextTickAsync(stoppingToken))
             await store.RetryAsync(stoppingToken);

@@ -62,7 +62,6 @@ builder.Services.AddRazorComponents();
 
 var app = builder.Build();
 
-await app.Services.GetRequiredService<DbConnectionStore>().InitializeAsync();
 
 if (!app.Environment.IsDevelopment())
 {
@@ -82,6 +81,19 @@ app.Use(async (context, next) =>
     if (store.State == DbState.Ready || !isPage || path.StartsWithSegments(DbConnectionStore.SetupPath))
     {
         await next();
+        return;
+    }
+    if (store.State == DbState.Connecting)
+    {
+        // Сразу после запуска: подключение к базе идёт в фоне. Страница сама обновится через 5 секунд (без JavaScript).
+        context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+        context.Response.Headers.RetryAfter = "5";
+        context.Response.ContentType = "text/html; charset=utf-8";
+        await context.Response.WriteAsync(
+            "<!DOCTYPE html><html lang=\"ru\"><head><meta charset=\"utf-8\"><meta http-equiv=\"refresh\" content=\"5\">" +
+            "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Сайт запускается</title></head>" +
+            "<body style=\"font-family:sans-serif;max-width:560px;margin:15vh auto;padding:0 16px;color:#333\">" +
+            "<h1 style=\"font-weight:500\">Сайт запускается</h1><p>Подключаемся к базе данных. Страница обновится сама.</p></body></html>");
         return;
     }
     context.Response.Redirect(DbConnectionStore.SetupPath);

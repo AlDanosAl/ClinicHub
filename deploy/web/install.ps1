@@ -137,8 +137,18 @@ if ($LASTEXITCODE -ne 0) { Fail "Не удалось выдать службе �
 & icacls.exe $logsDir /grant "${LocalServiceSid}:(OI)(CI)M" /T /C /Q | Out-Null
 if ($LASTEXITCODE -ne 0) { Fail "Не удалось выдать службе права на папку $logsDir." }
 # Наследование прав отключаем: обычные пользователи компьютера не должны видеть файл подключения.
-& icacls.exe $configDir /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)F" "*S-1-5-32-544:(OI)(CI)F" "${LocalServiceSid}:(OI)(CI)M" /T /C /Q | Out-Null
+# Права ставим только на папку (без /T: флаги (OI)(CI) к файлам не применяются, и файлы остались бы совсем без прав),
+# а файлам внутри возвращаем наследование от неё — при переустановке поверх служба по-прежнему их читает.
+& icacls.exe $configDir /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)F" "*S-1-5-32-544:(OI)(CI)F" "${LocalServiceSid}:(OI)(CI)M" /C /Q | Out-Null
 if ($LASTEXITCODE -ne 0) { Fail "Не удалось выдать службе права на папку $configDir." }
+if (Get-ChildItem $configDir -Force | Select-Object -First 1) {
+    # Файлы создаёт служба, она и владелец. Если права на них испорчены (так делала версия установщика до 2026-10-17),
+    # администратор не может их поменять, пока не станет владельцем: сначала владелец — группа «Администраторы».
+    # takeown, а не icacls /setowner: только он пускает к файлу без единого разрешения (привилегия «смена владельца»).
+    Get-ChildItem $configDir -Recurse -File -Force | ForEach-Object { & takeown.exe /F $_.FullName /A | Out-Null }
+    & icacls.exe (Join-Path $configDir "*") /reset /T /C /Q | Out-Null
+    if ($LASTEXITCODE -ne 0) { Fail "Не удалось восстановить права на файлы в $configDir." }
+}
 
 # Источник для журнала событий Windows: создать его может только администратор, поэтому делает установщик.
 if (-not [System.Diagnostics.EventLog]::SourceExists($EventSource)) {
@@ -196,9 +206,12 @@ Step "Жду, пока сайт запустится"
 $local = "http://localhost:$Port/"
 $ok = $false
 for ($i = 0; $i -lt 30; $i++) {
+    # Любой HTTP-ответ значит, что служба работает. 503 — сайт ещё подключается к базе данных (в фоне, это нормально).
     try {
         $r = Invoke-WebRequest -Uri $local -UseBasicParsing -TimeoutSec 3
         if ($r.StatusCode -eq 200) { $ok = $true; break }
+    } catch [System.Net.WebException] {
+        if ($_.Exception.Response) { $ok = $true; break }
     } catch { }
     Start-Sleep -Seconds 1
 }
